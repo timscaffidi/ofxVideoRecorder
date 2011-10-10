@@ -2,7 +2,6 @@
 
 #include "ofMain.h"
 #include "ofxVideoRecorder.h"
-#include "threadedVidSaver.h"
 
 class testApp : public ofBaseApp{
 

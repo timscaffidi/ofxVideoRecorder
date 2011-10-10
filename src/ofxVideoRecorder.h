@@ -110,10 +110,6 @@ public:
                 videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
                 FreeImage_CloseMemory(hmem);
 
-//                ofBuffer fBuf;
-//                ofSaveImage(*frame,fBuf,OF_IMAGE_FORMAT_JPEG,OF_IMAGE_QUALITY_BEST);
-//                videoFile << fBuf;
-
                 delete frame;
             }
 
