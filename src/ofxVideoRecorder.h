@@ -36,7 +36,10 @@ public:
         height = h;
         frameRate = fps;
         fileName = fname;
-        return bIsInitialized = videoFile.open(fileName+".mjpg",ofFile::WriteOnly,true);
+        bIsInitialized = videoFile.open(fileName+".mjpg",ofFile::WriteOnly,true);
+        if(!isThreadRunning())
+            startThread(true, false);
+        return bIsInitialized;
     }
 
     void addFrame(const ofPixels pixels)
@@ -48,8 +51,6 @@ public:
             lock();
             frames.push(buffer);
             unlock();
-            if(!isThreadRunning())
-                startThread(false, false);
         }
     }
 
@@ -72,7 +73,7 @@ public:
 
     void threadedFunction()
     {
-        while(isThreadRunning() && frames.size() > 0)
+        while(isThreadRunning())
         {
             register unsigned char * pixels;
             register int index;
@@ -80,41 +81,48 @@ public:
             register int cnt = width*height;
             register int byteCount = 3;
             ofPixels * frame = NULL;
-            if(lock())
-            {
+            if(!frames.empty()) {
+                lock();
                 frame = frames.front();
                 frames.pop();
                 unlock();
-            }
-            if(frame)
-            {
 
-                pixels = frame->getPixels();
-                while (cnt >0 )
+                if(frame)
                 {
-                    index               = cnt*byteCount;
-                    temp				= pixels[index];
-                    pixels[index]		= pixels[index+2];
-                    pixels[index+2]		= temp;
-                    cnt--;
+                    pixels = frame->getPixels();
+                    while (cnt >0 )
+                    {
+                        index               = cnt*byteCount;
+                        temp				= pixels[index];
+                        pixels[index]		= pixels[index+2];
+                        pixels[index+2]		= temp;
+                        cnt--;
+                    }
+
+                    FIBITMAP * bmp = FreeImage_ConvertFromRawBits(pixels, width, height, width*3, 24, FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
+                    FIMEMORY *hmem = FreeImage_OpenMemory();
+
+                    FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, 100);
+
+
+                    long file_size = FreeImage_TellMemory(hmem);
+                    videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
+                    FreeImage_Unload(bmp);
+                    FreeImage_CloseMemory(hmem);
+
+                    delete frame;
                 }
 
-                FIBITMAP * bmp = FreeImage_ConvertFromRawBits(pixels, width, height, width*3, 24, FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
-                FIMEMORY *hmem = FreeImage_OpenMemory();
-
-                FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, 100);
-
-                FreeImage_Unload(bmp);
-
-                long file_size = FreeImage_TellMemory(hmem);
-                videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
-                FreeImage_CloseMemory(hmem);
-
-                delete frame;
             }
-
+            else {
+                if(bIsInitialized){
+                    ofSleepMillis(1.0/(float)frameRate);
+                }
+                else {
+                 break;
+                }
+            }
         }
-        stopThread();
     }
 
     int getNumFramesInQueue()
