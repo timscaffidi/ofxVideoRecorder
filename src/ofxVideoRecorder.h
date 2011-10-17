@@ -102,7 +102,6 @@ public:
 			} else {
 				if(bIsInitialized){
 					//ofSleepMillis(1.0/(float)frameRate);
-					ofLogError("waiting");
 					condition.wait(conditionMutex);
 				}else{
 					break;
