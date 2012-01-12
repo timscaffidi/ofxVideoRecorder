@@ -57,8 +57,16 @@ public:
 
     void close()
     {
+
+        condition.signal();
+        while(frames.size() > 0) ofSleepMillis(100);
+
         bIsInitialized = false;
-        waitForThread(false);
+        condition.signal();
+
+        stopThread();
+
+
         if(videoFile.is_open())
         {
             videoFile.close();
@@ -85,9 +93,10 @@ public:
 			unlock();
 
 			if(frame){
-				frame->swapRgb();
+			    if(frame->getBytesPerPixel() >=3)
+                    frame->swapRgb();
 
-				FIBITMAP * bmp = FreeImage_ConvertFromRawBits(frame->getPixels(), width, height, width*3, 24, FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
+				FIBITMAP * bmp = FreeImage_ConvertFromRawBits(frame->getPixels(), width, height, width*frame->getBytesPerPixel(), frame->getBitsPerPixel(), FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
 				FIMEMORY *hmem = FreeImage_OpenMemory();
 
 				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, 100);
@@ -101,9 +110,10 @@ public:
 				delete frame;
 			} else {
 				if(bIsInitialized){
-					//ofSleepMillis(1.0/(float)frameRate);
+				    ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: waiting for mutex condition");
 					condition.wait(conditionMutex);
 				}else{
+				    ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: exiting");
 					break;
 				}
 			}
