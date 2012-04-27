@@ -25,7 +25,7 @@ public:
     {
         bIsInitialized = false;
     }
-    bool setup(string fname, int w, int h, int fps)
+    bool setup(string fname, int w, int h, int fps, int quality = JPEG_QUALITYGOOD)
     {
         if(bIsInitialized)
         {
@@ -35,6 +35,20 @@ public:
         width = w;
         height = h;
         frameRate = fps;
+
+        switch(quality) {
+            case JPEG_QUALITYSUPERB:
+            case JPEG_QUALITYGOOD:
+            case JPEG_QUALITYNORMAL:
+            case JPEG_QUALITYAVERAGE:
+            case JPEG_QUALITYBAD:
+                jpeg_quality = quality;
+                break;
+            default:
+                jpeg_quality = MAX(MIN(quality,100),0);
+                break;
+        }
+
         fileName = fname;
         bIsInitialized = videoFile.open(fileName+".mjpg",ofFile::WriteOnly,true);
         bufferPath = videoFile.getAbsolutePath();
@@ -105,7 +119,7 @@ public:
 				FIBITMAP * bmp = FreeImage_ConvertFromRawBits(frame->getPixels(), width, height, width*frame->getBytesPerPixel(), frame->getBitsPerPixel(), FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
 				FIMEMORY *hmem = FreeImage_OpenMemory();
 
-				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, JPEG_QUALITYGOOD);
+				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, jpeg_quality);
 
 				long file_size = FreeImage_TellMemory(hmem);
 				videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
@@ -144,4 +158,5 @@ private:
     queue<ofPixels *> frames;
     Poco::Condition condition;
     ofMutex conditionMutex;
+    int jpeg_quality;
 };
