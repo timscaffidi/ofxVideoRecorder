@@ -37,6 +37,9 @@ public:
         frameRate = fps;
         fileName = fname;
         bIsInitialized = videoFile.open(fileName+".mjpg",ofFile::WriteOnly,true);
+        bufferPath = videoFile.getAbsolutePath();
+        moviePath = ofFilePath::getAbsolutePath(fileName);
+
         if(!isThreadRunning())
             startThread(true, false);
         return bIsInitialized;
@@ -53,6 +56,9 @@ public:
             unlock();
             condition.signal();
         }
+    }
+    string getMoviePath(){
+        return moviePath;
     }
 
     void close()
@@ -75,8 +81,8 @@ public:
     int encodeVideo()
     {
         if(bIsInitialized) close();
-        char cmd[256];
-        sprintf(cmd,"ffmpeg -y -r %2$d -i data/%1$s.mjpg -r %2$d -vcodec copy data/%1$s; rm data/%1$s.mjpg",fileName.c_str(), frameRate);
+        char cmd[8192];
+        sprintf(cmd,"bash --login -c 'ffmpeg -y -r %3$d -i %1$s -r %3$d -vcodec copy %2$s; rm %1$s'", bufferPath.c_str(), moviePath.c_str(), frameRate);
         return system(cmd);
     }
 
@@ -99,8 +105,7 @@ public:
 				FIBITMAP * bmp = FreeImage_ConvertFromRawBits(frame->getPixels(), width, height, width*frame->getBytesPerPixel(), frame->getBitsPerPixel(), FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
 				FIMEMORY *hmem = FreeImage_OpenMemory();
 
-				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, 100);
-
+				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, JPEG_QUALITYGOOD);
 
 				long file_size = FreeImage_TellMemory(hmem);
 				videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
@@ -131,6 +136,8 @@ public:
 
 private:
     string fileName;
+    string bufferPath;
+    string moviePath;
     ofFile videoFile;
     int width, height, frameRate;
     bool bIsInitialized;
