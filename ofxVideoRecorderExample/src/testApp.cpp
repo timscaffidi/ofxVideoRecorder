@@ -3,9 +3,9 @@
 //--------------------------------------------------------------
 void testApp::setup(){
     ofSetLogLevel(OF_LOG_NOTICE);
-    vidGrabber.setDesiredFrameRate(60);
+     vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(640, 480);
-    vidRecorder.setup("testMovie.mov", vidGrabber.width, vidGrabber.height, 60);
+    vidRecorder.setup("testMovie.mov", vidGrabber.width, vidGrabber.height, 60, JPEG_QUALITYSUPERB);
 }
 
 void testApp::exit() {
