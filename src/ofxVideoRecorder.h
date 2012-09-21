@@ -59,7 +59,7 @@ public:
         return bIsInitialized;
     }
 
-    void addFrame(const ofPixels pixels)
+    void addFrame(const ofPixels &pixels)
     {
         if(bIsInitialized)
         {
@@ -120,13 +120,16 @@ public:
 				FIMEMORY *hmem = FreeImage_OpenMemory();
 
 				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, jpeg_quality);
+				FreeImage_Unload(bmp);
+				bmp = NULL;
 
 				long file_size = FreeImage_TellMemory(hmem);
 				videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
-				FreeImage_Unload(bmp);
 				FreeImage_CloseMemory(hmem);
+                hmem = NULL;
 
 				delete frame;
+				frame = NULL;
 			} else {
 				if(bIsInitialized){
 				    ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: waiting for mutex condition");
@@ -147,6 +150,9 @@ public:
     {
         return bIsInitialized;
     }
+
+    int getWidth(){return width;}
+    int getHeight(){return height;}
 
 private:
     string fileName;
