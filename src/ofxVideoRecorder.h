@@ -2,21 +2,6 @@
 
 #include "ofMain.h"
 #include <queue>
-#include "FreeImage.h"
-
-FI_STRUCT (FIMEMORYHEADER)
-{
-    /// remember to delete the buffer
-    bool delete_me;
-    /// file length
-    long filelen;
-    /// buffer size
-    long datalen;
-    /// current position
-    long curpos;
-    /// start buffer address
-    void *data;
-};
 
 class ofxVideoRecorder : public ofThread
 {
@@ -25,7 +10,7 @@ public:
     {
         bIsInitialized = false;
     }
-    bool setup(string fname, int w, int h, int fps, int quality = JPEG_QUALITYGOOD)
+    bool setup(string fname, int w, int h, int fps, ofImageQualityType quality = OF_IMAGE_QUALITY_BEST)
     {
         if(bIsInitialized)
         {
@@ -35,19 +20,7 @@ public:
         width = w;
         height = h;
         frameRate = fps;
-
-        switch(quality) {
-            case JPEG_QUALITYSUPERB:
-            case JPEG_QUALITYGOOD:
-            case JPEG_QUALITYNORMAL:
-            case JPEG_QUALITYAVERAGE:
-            case JPEG_QUALITYBAD:
-                jpeg_quality = quality;
-                break;
-            default:
-                jpeg_quality = MAX(MIN(quality,100),0);
-                break;
-        }
+        jpeg_quality = quality;
 
         fileName = fname;
         bIsInitialized = videoFile.open(fileName+".mjpg",ofFile::WriteOnly,true);
@@ -57,6 +30,10 @@ public:
         if(!isThreadRunning())
             startThread(true, false);
         return bIsInitialized;
+    }
+
+    void setQuality(ofImageQualityType q){
+        jpeg_quality = q;
     }
 
     void addFrame(const ofPixels &pixels)
@@ -77,7 +54,6 @@ public:
 
     void close()
     {
-
         condition.signal();
         while(frames.size() > 0) ofSleepMillis(100);
 
@@ -85,7 +61,6 @@ public:
         condition.signal();
 
         stopThread();
-
 
         if(videoFile.is_open())
         {
@@ -113,23 +88,10 @@ public:
 			unlock();
 
 			if(frame){
-			    if(frame->getBytesPerPixel() >=3)
-                    frame->swapRgb();
-
-				FIBITMAP * bmp = FreeImage_ConvertFromRawBits(frame->getPixels(), width, height, width*frame->getBytesPerPixel(), frame->getBitsPerPixel(), FI_RGBA_RED_MASK,FI_RGBA_GREEN_MASK,FI_RGBA_BLUE_MASK, true);
-				FIMEMORY *hmem = FreeImage_OpenMemory();
-
-				FreeImage_SaveToMemory(FIF_JPEG, bmp, hmem, jpeg_quality);
-				FreeImage_Unload(bmp);
-				bmp = NULL;
-
-				long file_size = FreeImage_TellMemory(hmem);
-				videoFile.write((char *)(((FIMEMORYHEADER*)(hmem->data))->data), file_size);
-				FreeImage_CloseMemory(hmem);
-                hmem = NULL;
-
-				delete frame;
-				frame = NULL;
+                ofBuffer data;
+                ofSaveImage(*frame,data, OF_IMAGE_FORMAT_JPEG, jpeg_quality);
+                videoFile.writeFromBuffer(data);
+                data.clear();
 			} else {
 				if(bIsInitialized){
 				    ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: waiting for mutex condition");
@@ -164,5 +126,5 @@ private:
     queue<ofPixels *> frames;
     Poco::Condition condition;
     ofMutex conditionMutex;
-    int jpeg_quality;
+    ofImageQualityType jpeg_quality;
 };
