@@ -5,7 +5,9 @@ void testApp::setup(){
     ofSetLogLevel(OF_LOG_NOTICE);
      vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(640, 480);
-    vidRecorder.setup("testMovie.mov", vidGrabber.width, vidGrabber.height, 60, JPEG_QUALITYSUPERB);
+    vidRecorder.setup("testMovie.mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 60, OF_IMAGE_QUALITY_HIGH);
+
+    ofSetWindowShape(640,480);
 }
 
 void testApp::exit() {
@@ -18,14 +20,14 @@ void testApp::update(){
     if(vidGrabber.isFrameNew()) {
         vidRecorder.addFrame(vidGrabber.getPixelsRef());
     }
-    char title[256];
-    sprintf(title,"%d/%d=%.2f, %.2f", vidRecorder.getNumFramesInQueue(), ofGetElapsedTimeMillis()/1000, vidRecorder.getNumFramesInQueue()/ofGetElapsedTimef(), ofGetFrameRate());
-    ofSetWindowTitle(ofToString(title));
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
     vidGrabber.draw(0,0);
+    char title[256];
+    sprintf(title,"frames in queue: %d\nfps: %.2f", vidRecorder.getNumFramesInQueue(), ofGetFrameRate());
+    ofDrawBitmapString(ofToString(title),20,20);
 }
 
 //--------------------------------------------------------------
