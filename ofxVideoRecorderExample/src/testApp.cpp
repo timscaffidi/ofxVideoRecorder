@@ -2,10 +2,10 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
-    ofSetLogLevel(OF_LOG_NOTICE);
-     vidGrabber.setDesiredFrameRate(60);
+    ofSetLogLevel(OF_LOG_ERROR);
+    //vidGrabber.setDesiredFrameRate(60);
     vidGrabber.initGrabber(640, 480);
-    vidRecorder.setup("testMovie.mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 60, OF_IMAGE_QUALITY_HIGH);
+    vidRecorder.setup("testMovie.mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 15, OF_IMAGE_QUALITY_HIGH, true);
 
     ofSetWindowShape(640,480);
 }
