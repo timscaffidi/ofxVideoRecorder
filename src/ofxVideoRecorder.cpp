@@ -8,6 +8,7 @@
 
 #include "ofxVideoRecorder.h"
 #include <unistd.h>
+#include <fcntl.h>
 
 execThread::execThread(){
     execCommand = "";
@@ -36,25 +37,25 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, int fps, ofImageQuality
     {
         close();
     }
-    
+
     width = w;
     height = h;
     frameRate = fps;
     jpeg_quality = quality;
     fileName = fname;
     encodeOnTheFly = onTheFly;
-    
-    if(onTheFly){        
+
+    if(onTheFly){
         string pipeFile = ofFilePath::getAbsolutePath("ofxvrpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(pipeFile)){
             string cmd = "bash --login -c 'mkfifo " + pipeFile + "'";
             system(cmd.c_str());
         }
-        
+
         string absFilePath = ofFilePath::getAbsolutePath(fileName);
-        string cmd = "bash --login -c 'ffmpeg -y -r 15 -f mjpeg -vcodec mjpeg -i "+ pipeFile +" -r 15 -vcodec mpeg4 -sameq "+ absFilePath +"'";
+        string cmd = "bash --login -c 'ffmpeg -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps)+" -vcodec mpeg4 -sameq "+ absFilePath +"'";
         ffmpegThread.setup(cmd);
-        
+
         fp = ::open(pipeFile.c_str(), O_WRONLY);
         bIsInitialized = true;
     }
@@ -63,7 +64,7 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, int fps, ofImageQuality
     }
     bufferPath = videoFile.getAbsolutePath();
     moviePath = ofFilePath::getAbsolutePath(fileName);
-    
+
     if(!isThreadRunning())
         startThread(true, false);
     return bIsInitialized;
@@ -78,7 +79,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
     if(bIsInitialized)
     {
         ofPixels * buffer = new ofPixels(pixels);
-        
+
         lock();
         frames.push(buffer);
         unlock();
@@ -90,13 +91,13 @@ void ofxVideoRecorder::close()
 {
     condition.signal();
     while(frames.size() > 0) ofSleepMillis(100);
-    
+
     bIsInitialized = false;
     condition.signal();
-    
+
     stopThread();
     ofSleepMillis(100);
-    
+
     if(videoFile.is_open())
     {
         videoFile.close();
@@ -115,7 +116,7 @@ int ofxVideoRecorder::encodeVideo()
     if(encodeOnTheFly) return 0;
     string fr = ofToString(frameRate);
     string cmd = "bash --login -c 'ffmpeg -y -r " + fr + " -i " + bufferPath + " -r " + fr + " -vcodec copy " + moviePath + "; rm " + bufferPath + "'";
-    
+
     return system(cmd.c_str());
 }
 
@@ -130,17 +131,18 @@ void ofxVideoRecorder::threadedFunction()
             frames.pop();
         }
         unlock();
-        
+
         if(frame){
-            ofBuffer data;
-            ofSaveImage(*frame,data, OF_IMAGE_FORMAT_JPEG, jpeg_quality);
             if(encodeOnTheFly){
-                int br = ::write(fp, data.getBinaryBuffer(), data.size());
+                //int br = ::write(fp, data.getBinaryBuffer(), data.size());
+                int br = ::write(fp, (char *)frame->getPixels(), frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel());
             }
             else{
+                ofBuffer data;
+                ofSaveImage(*frame,data, OF_IMAGE_FORMAT_BMP, jpeg_quality);
                 videoFile.writeFromBuffer(data);
+                data.clear();
             }
-            data.clear();
             frame->clear();
             delete frame;
         } else {
