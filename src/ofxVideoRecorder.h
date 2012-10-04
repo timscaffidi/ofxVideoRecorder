@@ -92,6 +92,8 @@ public:
                 ofSaveImage(*frame,data, OF_IMAGE_FORMAT_JPEG, jpeg_quality);
                 videoFile.writeFromBuffer(data);
                 data.clear();
+                frame->clear();
+                delete frame;
 			} else {
 				if(bIsInitialized){
 				    ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: waiting for mutex condition");
