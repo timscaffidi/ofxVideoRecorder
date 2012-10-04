@@ -141,6 +141,8 @@ void ofxVideoRecorder::threadedFunction()
                 videoFile.writeFromBuffer(data);
             }
             data.clear();
+            frame->clear();
+            delete frame;
         } else {
             if(bIsInitialized){
                 ofLog(OF_LOG_VERBOSE, "ofxVideoRecorder: threaded function: waiting for mutex condition");
