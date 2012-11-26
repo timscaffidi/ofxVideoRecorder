@@ -45,11 +45,12 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, int fps, ofImageQuality
     fileName = fname;
     encodeOnTheFly = onTheFly;
 
-    if(onTheFly){
+    if(encodeOnTheFly){
         string pipeFile = ofFilePath::getAbsolutePath("ofxvrpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(pipeFile)){
             string cmd = "bash --login -c 'mkfifo " + pipeFile + "'";
             system(cmd.c_str());
+            // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
         }
 
         string absFilePath = ofFilePath::getAbsolutePath(fileName);
@@ -65,6 +66,38 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, int fps, ofImageQuality
     bufferPath = videoFile.getAbsolutePath();
     moviePath = ofFilePath::getAbsolutePath(fileName);
 
+    if(!isThreadRunning())
+        startThread(true, false);
+    return bIsInitialized;
+}
+
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, int fps, string outputString)
+{
+    if(bIsInitialized)
+    {
+        close();
+    }
+    
+    width = w;
+    height = h;
+    frameRate = fps;
+    encodeOnTheFly = true;
+    
+    string pipeFile = ofFilePath::getAbsolutePath("ofxvrpipe" + ofToString(pipeNumber));
+    if(!ofFile::doesFileExist(pipeFile)){
+        string cmd = "bash --login -c 'mkfifo " + pipeFile + "'";
+        system(cmd.c_str());
+        // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
+    }
+    pipeNumber++;
+    
+    string absFilePath = ofFilePath::getAbsolutePath(fileName);
+    string cmd = "bash --login -c 'ffmpeg -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps) + " "+ outputString +"'";
+    ffmpegThread.setup(cmd);
+    
+    fp = ::open(pipeFile.c_str(), O_WRONLY);
+    bIsInitialized = true;
+    
     if(!isThreadRunning())
         startThread(true, false);
     return bIsInitialized;

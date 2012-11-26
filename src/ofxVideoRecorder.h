@@ -18,6 +18,7 @@ public:
     ofxVideoRecorder();
     
     bool setup(string fname, int w, int h, int fps, ofImageQualityType quality, bool onTheFly);
+    bool setupCustomOutput(int w, int h, int fps, string outputString);
     void setQuality(ofImageQualityType q);
     void addFrame(const ofPixels &pixels);
     void close();
