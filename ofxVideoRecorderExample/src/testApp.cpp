@@ -6,6 +6,7 @@ void testApp::setup(){
     vidGrabber.setDesiredFrameRate(30);
     vidGrabber.initGrabber(640, 480);
     vidRecorder.setup("testMovie.mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30, OF_IMAGE_QUALITY_HIGH, true);
+//    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // with custom ffmpeg output string
 
     ofSetWindowShape(640,480);
 }
