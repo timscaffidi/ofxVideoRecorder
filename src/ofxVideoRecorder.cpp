@@ -29,7 +29,7 @@ int ofxVideoRecorder::pipeNumber = 0;
 ofxVideoRecorder::ofxVideoRecorder()
 {
     bIsInitialized = false;
-    ffmpegLocation = "ffmepg";
+    ffmpegLocation = "ffmpeg";
 }
 
 bool ofxVideoRecorder::setup(string fname, int w, int h, int fps)
