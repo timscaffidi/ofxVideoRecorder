@@ -17,12 +17,11 @@ class ofxVideoRecorder : public ofThread
 public:
     ofxVideoRecorder();
     
-    bool setup(string fname, int w, int h, int fps, ofImageQualityType quality, bool onTheFly);
+    bool setup(string fname, int w, int h, int fps);
     bool setupCustomOutput(int w, int h, int fps, string outputString);
     void setQuality(ofImageQualityType q);
     void addFrame(const ofPixels &pixels);
     void close();
-    int encodeVideo();
     void threadedFunction();
     
     int getNumFramesInQueue(){ return frames.size(); }
@@ -34,17 +33,13 @@ public:
 
 private:
     string fileName;
-    string bufferPath;
     string moviePath;
     string pipePath;
-    ofFile videoFile;
     int width, height, frameRate;
     bool bIsInitialized;
     queue<ofPixels *> frames;
     Poco::Condition condition;
     ofMutex conditionMutex;
-    ofImageQualityType jpeg_quality;
-    bool encodeOnTheFly;
     execThread ffmpegThread;
     int videoPipeFd[2];
     int fp;
