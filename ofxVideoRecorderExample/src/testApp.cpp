@@ -4,11 +4,14 @@
 void testApp::setup(){
     ofSetLogLevel(OF_LOG_ERROR);
     vidGrabber.setDesiredFrameRate(30);
-    vidGrabber.initGrabber(640, 480);
-    vidRecorder.setup("testMovie.mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
-//    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // with custom ffmpeg output string
+    vidGrabber.initGrabber(640, 360);
+//    vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg")); // use this is you have ffmpeg installed in your data folder
+    vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
+//    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
 
-    ofSetWindowShape(640,480);
+    ofSetWindowShape(vidGrabber.getWidth(), vidGrabber.getHeight()	);
+    bRecording = false;
+    ofEnableAlphaBlending();
 }
 
 void testApp::exit() {
@@ -18,28 +21,50 @@ void testApp::exit() {
 //--------------------------------------------------------------
 void testApp::update(){
     vidGrabber.update();
-    if(vidGrabber.isFrameNew()) {
+    if(vidGrabber.isFrameNew() && bRecording) {
         vidRecorder.addFrame(vidGrabber.getPixelsRef());
     }
 }
 
 //--------------------------------------------------------------
 void testApp::draw(){
+    ofSetColor(255, 255, 255);
     vidGrabber.draw(0,0);
-    char title[256];
-    sprintf(title,"frames in queue: %d\nfps: %.2f", vidRecorder.getNumFramesInQueue(), ofGetFrameRate());
-    ofDrawBitmapString(ofToString(title),20,20);
+    
+    stringstream ss;
+    ss << "Frames in queue: " << vidRecorder.getNumFramesInQueue() << endl
+    << "FPS: " << ofGetFrameRate() << endl
+    << (bRecording?"pause":"start") << " recording: r" << endl
+    << (bRecording?"close current video file: c":"") << endl;
+    
+    ofSetColor(0,0,0,100);
+    ofRect(0, 0, 260, 65);
+    ofSetColor(255, 255, 255);
+    ofDrawBitmapString(ss.str(),15,15);
+    
+    if(bRecording){
+    ofSetColor(255, 0, 0);
+    ofCircle(ofGetWidth() - 20, 20, 5);
+    }
 }
 
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
-    if(key=='c')
-        vidRecorder.close();
 }
 
 //--------------------------------------------------------------
 void testApp::keyReleased(int key){
-
+    
+    if(key=='r'){
+        bRecording = !bRecording;
+        if(bRecording && !vidRecorder.isInitialized()) {
+            vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
+        }
+    }
+    if(key=='c'){
+        bRecording = false;
+        vidRecorder.close();
+    }
 }
 
 //--------------------------------------------------------------

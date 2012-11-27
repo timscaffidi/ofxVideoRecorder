@@ -23,5 +23,5 @@ class testApp : public ofBaseApp{
 
         ofVideoGrabber      vidGrabber;
 		ofxVideoRecorder    vidRecorder;
-
+        bool bRecording;
 };
