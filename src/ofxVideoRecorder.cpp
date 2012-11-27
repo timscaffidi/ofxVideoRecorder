@@ -29,6 +29,7 @@ int ofxVideoRecorder::pipeNumber = 0;
 ofxVideoRecorder::ofxVideoRecorder()
 {
     bIsInitialized = false;
+    ffmpegLocation = "ffmepg";
 }
 
 bool ofxVideoRecorder::setup(string fname, int w, int h, int fps)
@@ -52,7 +53,7 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, int fps)
     }
     
     string absFilePath = ofFilePath::getAbsolutePath(fileName);
-    string cmd = "bash --login -c 'ffmpeg -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps)+" -vcodec mpeg4 -sameq "+ absFilePath +"'";
+    string cmd = "bash --login -c '" + ffmpegLocation + " -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps)+" -vcodec mpeg4 -sameq "+ absFilePath +"'";
     ffmpegThread.setup(cmd);
     
     fp = ::open(pipeFile.c_str(), O_WRONLY);
@@ -84,7 +85,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, int fps, string outputStr
     pipeNumber++;
     
     string absFilePath = ofFilePath::getAbsolutePath(fileName);
-    string cmd = "bash --login -c 'ffmpeg -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps) + " "+ outputString +"'";
+    string cmd = "bash --login -c '" + ffmpegLocation + " -y -r "+ofToString(fps)+" -s "+ofToString(w)+"x"+ofToString(h)+" -f rawvideo -pix_fmt rgb24 -i "+ pipeFile +" -r "+ofToString(fps) + " "+ outputString +"'";
     ffmpegThread.setup(cmd);
     
     fp = ::open(pipeFile.c_str(), O_WRONLY);

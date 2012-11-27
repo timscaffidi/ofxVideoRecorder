@@ -16,7 +16,7 @@ class ofxVideoRecorder : public ofThread
 {
 public:
     ofxVideoRecorder();
-    
+    void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     bool setup(string fname, int w, int h, int fps);
     bool setupCustomOutput(int w, int h, int fps, string outputString);
     void setQuality(ofImageQualityType q);
@@ -35,6 +35,7 @@ private:
     string fileName;
     string moviePath;
     string pipePath;
+    string ffmpegLocation;
     int width, height, frameRate;
     bool bIsInitialized;
     queue<ofPixels *> frames;
