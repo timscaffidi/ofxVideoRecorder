@@ -2,13 +2,21 @@
 
 //--------------------------------------------------------------
 void testApp::setup(){
-    ofSetLogLevel(OF_LOG_ERROR);
+    sampleRate = 48000;
+    channels = 1;
+    ofSetFrameRate(30);
+    
+    ofSetLogLevel(OF_LOG_VERBOSE);
     vidGrabber.setDesiredFrameRate(30);
     vidGrabber.initGrabber(640, 360);
 //    vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg")); // use this is you have ffmpeg installed in your data folder
-    vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
-//    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
-
+    
+    vidRecorder.setVideoCodec("h264");
+    vidRecorder.setVideoBitrate("800k");
+    
+    soundStream.listDevices();
+    soundStream.setup(this, 0, 1, sampleRate, 256, 4);
+    
     ofSetWindowShape(vidGrabber.getWidth(), vidGrabber.getHeight()	);
     bRecording = false;
     ofEnableAlphaBlending();
@@ -21,7 +29,7 @@ void testApp::exit() {
 //--------------------------------------------------------------
 void testApp::update(){
     vidGrabber.update();
-    if(vidGrabber.isFrameNew() && bRecording) {
+    if(vidGrabber.isFrameNew() && bRecording){
         vidRecorder.addFrame(vidGrabber.getPixelsRef());
     }
 }
@@ -29,10 +37,11 @@ void testApp::update(){
 //--------------------------------------------------------------
 void testApp::draw(){
     ofSetColor(255, 255, 255);
-    vidGrabber.draw(0,0);
+    vidGrabber.draw(0,0);    
     
     stringstream ss;
-    ss << "Frames in queue: " << vidRecorder.getNumFramesInQueue() << endl
+    ss << "video queue size: " << vidRecorder.getVideoQueueSize() << endl
+    << "audio queue size: " << vidRecorder.getAudioQueueSize() << endl
     << "FPS: " << ofGetFrameRate() << endl
     << (bRecording?"pause":"start") << " recording: r" << endl
     << (bRecording?"close current video file: c":"") << endl;
@@ -48,6 +57,11 @@ void testApp::draw(){
     }
 }
 
+void testApp::audioIn(float *input, int bufferSize, int nChannels){
+    if(bRecording)
+        vidRecorder.addAudioSamples(input, bufferSize, nChannels);
+}
+
 //--------------------------------------------------------------
 void testApp::keyPressed(int key){
 }
@@ -58,7 +72,9 @@ void testApp::keyReleased(int key){
     if(key=='r'){
         bRecording = !bRecording;
         if(bRecording && !vidRecorder.isInitialized()) {
-            vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
+            vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30, sampleRate, channels);
+            //    vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
+            //    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
         }
     }
     if(key=='c'){
