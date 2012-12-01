@@ -54,14 +54,16 @@ struct audioFrameShort {
 class ofxVideoDataWriterThread : public ofThread {
 public:
     ofxVideoDataWriterThread();
-    void setup(ofFile *file, lockFreeQueue<ofPixels *> * q);
+//    void setup(ofFile *file, lockFreeQueue<ofPixels *> * q);
+    void setup(int file_desc, lockFreeQueue<ofPixels *> * q);
     void threadedFunction();
     void signal();
     bool isWriting() { return bIsWriting; }
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
-    ofFile * writer;
+//    ofFile * writer;
+    int fd;
     lockFreeQueue<ofPixels *> * queue;
     bool bIsWriting;
 };
@@ -69,14 +71,16 @@ private:
 class ofxAudioDataWriterThread : public ofThread {
 public:
     ofxAudioDataWriterThread();
-    void setup(ofFile *file, lockFreeQueue<audioFrameShort *> * q);
+//    void setup(ofFile *file, lockFreeQueue<audioFrameShort *> * q);
+    void setup(int file_desc, lockFreeQueue<audioFrameShort *> * q);
     void threadedFunction();
     void signal();
     bool isWriting() { return bIsWriting; }
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
-    ofFile * writer;
+//    ofFile * writer;
+    int fd;
     lockFreeQueue<audioFrameShort *> * queue;
     bool bIsWriting;
 };
@@ -93,7 +97,6 @@ public:
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
     void close();
     
-//    void threadedFunction();
     void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     void setVideoCodec(string codec) { videoCodec = codec; }
     void setAudioCodec(string codec) { audioCodec = codec; }
@@ -119,6 +122,7 @@ private:
     bool bIsInitialized;
     bool bRecordAudio;
     bool bRecordVideo;
+    bool bFinishing;
     lockFreeQueue<ofPixels *> frames;
     lockFreeQueue<audioFrameShort *> audioFrames;
     unsigned long long audioSamplesRecorded;
@@ -126,6 +130,7 @@ private:
     ofxVideoDataWriterThread videoThread;
     ofxAudioDataWriterThread audioThread;
     execThread ffmpegThread;
-    ofFile videoPipe, audioPipe;
+//    ofFile videoPipe, audioPipe;
+    int videoPipeFd, audioPipeFd;
     static int pipeNumber;
 };

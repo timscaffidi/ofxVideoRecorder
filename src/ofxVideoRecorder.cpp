@@ -7,7 +7,26 @@
 //
 
 #include "ofxVideoRecorder.h"
+#include <sys/types.h>
+#include <sys/stat.h>
 
+
+int setNonblocking(int fd)
+{
+    int flags;
+    
+    /* If they have O_NONBLOCK, use the Posix way to do it */
+#if defined(O_NONBLOCK)
+    /* Fixme: O_NONBLOCK is defined but broken on SunOS 4.1.x and AIX 3.2.5. */
+    if (-1 == (flags = fcntl(fd, F_GETFL, 0)))
+        flags = 0;
+    return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+#else
+    /* Otherwise, use the old way of doing it */
+    flags = 1;
+    return ioctl(fd, FIOBIO, &flags);
+#endif
+}
 
 //===============================
 execThread::execThread(){
@@ -27,8 +46,8 @@ void execThread::threadedFunction(){
 
 //===============================
 ofxVideoDataWriterThread::ofxVideoDataWriterThread(){};
-void ofxVideoDataWriterThread::setup(ofFile *file, lockFreeQueue<ofPixels *> * q){
-    writer = file;
+void ofxVideoDataWriterThread::setup(int file_desc, lockFreeQueue<ofPixels *> * q){
+    fd = file_desc;
     queue = q;
     bIsWriting = false;
     startThread(true, false);
@@ -40,7 +59,9 @@ void ofxVideoDataWriterThread::threadedFunction(){
         ofPixels * frame = NULL;
         if(queue->Consume(frame) && frame){
             bIsWriting = true;
-            writer->write((char *)frame->getPixels(), frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel());
+            int b_offset = 0;
+            int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
+            int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
             bIsWriting = false;
             frame->clear();
             delete frame;
@@ -57,8 +78,8 @@ void ofxVideoDataWriterThread::signal(){
 
 //===============================
 ofxAudioDataWriterThread::ofxAudioDataWriterThread(){};
-void ofxAudioDataWriterThread::setup(ofFile *file, lockFreeQueue<audioFrameShort *> *q){
-    writer = file;
+void ofxAudioDataWriterThread::setup(int file_desc, lockFreeQueue<audioFrameShort *> *q){
+    fd = file_desc;
     queue = q;
     bIsWriting = false;
     startThread(true, false);
@@ -70,7 +91,10 @@ void ofxAudioDataWriterThread::threadedFunction(){
         audioFrameShort * frame = NULL;
         if(queue->Consume(frame) && frame){
             bIsWriting = true;
-            writer->write((char *)frame->data, frame->size*sizeof(short));
+            
+            int b_offset = 0;
+            int b_remaining = frame->size*sizeof(short);
+            int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining); 
             bIsWriting = false;
             delete [] frame->data;
             delete frame;
@@ -133,6 +157,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     
     bRecordAudio = (sampleRate > 0 && channels > 0);
     bRecordVideo = (w > 0 && h > 0 && fps > 0);
+    bFinishing = false;
     
     videoFramesRecorded = 0;
     audioSamplesRecorded = 0;
@@ -153,8 +178,9 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
         // recording video, create a FIFO pipe
         videoPipePath = ofFilePath::getAbsolutePath("ofxvrpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(videoPipePath)){
-            string cmd = "bash --login -c 'mkfifo " + videoPipePath + "'";
-            system(cmd.c_str());
+            mkfifo(videoPipePath.c_str(),0666);
+//            string cmd = "bash --login -c 'mkfifo " + videoPipePath + "'";
+//            system(cmd.c_str());
             // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
         }
     }
@@ -166,8 +192,10 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
         // recording video, create a FIFO pipe
         audioPipePath = ofFilePath::getAbsolutePath("ofxarpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(audioPipePath)){
-            string cmd = "bash --login -c 'mkfifo " + audioPipePath + "'";
-            system(cmd.c_str());
+            mkfifo(audioPipePath.c_str(),0666);
+//            string cmd = "bash --login -c 'mkfifo " + audioPipePath + "'";
+//            system(cmd.c_str());
+            
             // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
         }
     }
@@ -193,14 +221,12 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     ffmpegThread.setup(cmd.str()); // start ffmpeg thread, will wait for input pipes to be opened
     
     if(bRecordAudio){
-//        aFp = fopen(audioPipePath.c_str(), "w");
-        audioPipe.open(audioPipePath, ofFile::WriteOnly);
-        audioThread.setup(&audioPipe, &audioFrames);
+        audioPipeFd = ::open(audioPipePath.c_str(), O_WRONLY);
+        audioThread.setup(audioPipeFd, &audioFrames);
     }
     if(bRecordVideo){
-        //        vFp = fopen(videoPipePath.c_str(), "w");
-        videoPipe.open(videoPipePath, ofFile::WriteOnly);
-        videoThread.setup(&videoPipe, &frames);
+        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
+        videoThread.setup(videoPipeFd, &frames);
     }
     bIsInitialized = true;
     
@@ -212,7 +238,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
     if(bIsInitialized && bRecordVideo)
     {
         int framesToAdd = 1; //default add one frame per request
-        if(bRecordAudio){
+        if(bRecordAudio && !bFinishing){
             //if also recording audio, check the overall recorded time for audio and video to make sure audio is not going out of sync
             //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
             double videoRecordedTime = videoFramesRecorded / frameRate;
@@ -262,28 +288,37 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
 
 void ofxVideoRecorder::close()
 {
-    while(frames.size() > 0 || audioFrames.size() > 0) {
+    //set pipes to non_blocking so we dont get stuck at the final writes
+    bFinishing = true; // override the multi-frame adding feature in this state
+    while(frames.size() > 0 || audioFrames.size() > 0 ) {
         videoThread.signal();
         audioThread.signal();
-        
-        ofSleepMillis(100);
-        
-        //TODO: figure out how to flush the pipe so that the writerThreads don't get stuck at a write() call
-        // use non blocking IO
-        
-//        if ((frames.size() > 0 || videoThread.isWriting()) && audioFrames.size() == 0) {
-//            // video frame in queue, or video thread stuck in a write. try to add enough audio data for ffmpeg to consume it
-//            float * samples = new float[256];
-//            memset(samples, 0, sizeof(float)*256);
-//            addAudioSamples(samples, 256, audioChannels);
-//            delete [] samples;
-//        }
-//        else if(frames.size() == 0 && (audioFrames.size() > 0 || audioThread.isWriting())) {
-//            // audio samples in queue, or audioThread stuck in a write. add blank video frame
-//            ofPixels pixels;
-//            pixels.allocate(width,height,3);
-//            addFrame(pixels);
-//        }
+        //ofSleepMillis(5);
+        if(frames.size() <=1){
+            setNonblocking(audioPipeFd);
+            setNonblocking(videoPipeFd);
+        }
+        if (audioFrames.size() < sampleRate/frameRate) {
+            setNonblocking(audioPipeFd);
+            setNonblocking(videoPipeFd);
+        }
+                
+        if ((frames.size() > 0 || videoThread.isWriting()) && audioFrames.size() == 0) {
+            // video frame in queue, or video thread stuck in a write. try to add enough audio data for ffmpeg to consume it
+            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing video, adding blank audio samples" <<endl;
+            int numSamples = audioChannels*sampleRate/frameRate;
+            float * samples = new float[numSamples];
+            memset(samples, 0, sizeof(float)*numSamples);
+            addAudioSamples(samples, numSamples, audioChannels);
+            delete [] samples;
+        }
+        else if(frames.size() == 0 && (audioFrames.size() > 0 || audioThread.isWriting())) {
+            // audio samples in queue, or audioThread stuck in a write. add blank video frame
+            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing audio, adding blank video frames" <<endl;
+            ofPixels pixels;
+            pixels.allocate(width,height,3);
+            addFrame(pixels);
+        }
     }
     
     
@@ -293,14 +328,11 @@ void ofxVideoRecorder::close()
     audioThread.signal();
     bIsInitialized = false;
     
-//    ofSleepMillis(100);
     if (bRecordVideo) {
-//        fclose(vFp);
-        videoPipe.close();
+        ::close(videoPipeFd);
     }
     if (bRecordAudio) {
-//        fclose(aFp);
-        audioPipe.close();
+        ::close(audioPipeFd);
     }
     ffmpegThread.waitForThread();
     
