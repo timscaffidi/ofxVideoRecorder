@@ -47,7 +47,7 @@ void testApp::draw(){
     << (bRecording?"close current video file: c":"") << endl;
     
     ofSetColor(0,0,0,100);
-    ofRect(0, 0, 260, 65);
+    ofRect(0, 0, 260, 75);
     ofSetColor(255, 255, 255);
     ofDrawBitmapString(ss.str(),15,15);
     
