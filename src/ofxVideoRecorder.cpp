@@ -7,9 +7,6 @@
 //
 
 #include "ofxVideoRecorder.h"
-#include <sys/types.h>
-#include <sys/stat.h>
-
 
 int setNonblocking(int fd)
 {
@@ -109,8 +106,6 @@ void ofxAudioDataWriterThread::signal(){
 }
 
 //===============================
-int ofxVideoRecorder::pipeNumber = 0;
-
 ofxVideoRecorder::ofxVideoRecorder()
 {
     bIsInitialized = false;
@@ -170,6 +165,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     }
     videoPipePath = "";
     audioPipePath = "";
+    pipeNumber = requestPipeNumber();
     if(bRecordVideo) {
         width = w;
         height = h;
@@ -178,9 +174,8 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
         // recording video, create a FIFO pipe
         videoPipePath = ofFilePath::getAbsolutePath("ofxvrpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(videoPipePath)){
-            mkfifo(videoPipePath.c_str(),0666);
-//            string cmd = "bash --login -c 'mkfifo " + videoPipePath + "'";
-//            system(cmd.c_str());
+            string cmd = "bash --login -c 'mkfifo " + videoPipePath + "'";
+            system(cmd.c_str());
             // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
         }
     }
@@ -192,15 +187,13 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
         // recording video, create a FIFO pipe
         audioPipePath = ofFilePath::getAbsolutePath("ofxarpipe" + ofToString(pipeNumber));
         if(!ofFile::doesFileExist(audioPipePath)){
-            mkfifo(audioPipePath.c_str(),0666);
-//            string cmd = "bash --login -c 'mkfifo " + audioPipePath + "'";
-//            system(cmd.c_str());
+            string cmd = "bash --login -c 'mkfifo " + audioPipePath + "'";
+            system(cmd.c_str());
             
             // TODO: add windows compatable pipe creation (does ffmpeg work with windows pipes?)
         }
     }
-    pipeNumber++; // increase pipe number. if there are multiple video reocrdings they must have separate pipe files
-    
+        
     stringstream cmd;
     // basic ffmpeg invocation, -y option overwrites output file
     cmd << "bash --login -c '" << ffmpegLocation << " -y";
@@ -288,12 +281,19 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
 
 void ofxVideoRecorder::close()
 {
-    //set pipes to non_blocking so we dont get stuck at the final writes
-    bFinishing = true; // override the multi-frame adding feature in this state
-    while(frames.size() > 0 || audioFrames.size() > 0 ) {
+    //this whole part could be cleaned up and is kludgy.
+    //all of this is an attempt to make sure that both pipes are clear,
+    //not stuck writing, and ffmpeg is not stuck waiting for more data
+    //hopefully there is a better way that I'll figure out at some point
+    // it SEEMS to be working now, but may stall in some cases
+    // if it does stall, kill ffmpeg. you will need to re-encode the video file unfortunately
+    
+    bFinishing = true; // override frame doubling/dropping while finishing up
+    while(frames.size() > 0 || audioFrames.size() > 0 || audioThread.isWriting() || videoThread.isWriting()) {
         videoThread.signal();
         audioThread.signal();
         //ofSleepMillis(5);
+        //set pipes to non_blocking so we dont get stuck at the final writes
         if(frames.size() <=1){
             setNonblocking(audioPipeFd);
             setNonblocking(videoPipeFd);
@@ -334,6 +334,27 @@ void ofxVideoRecorder::close()
     if (bRecordAudio) {
         ::close(audioPipeFd);
     }
-    ffmpegThread.waitForThread();
     
+    retirePipeNumber(pipeNumber);
+    
+    ffmpegThread.waitForThread();
+    // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
+    
+}
+
+set<int> ofxVideoRecorder::openPipes;
+
+int ofxVideoRecorder::requestPipeNumber(){
+    int n = 0;
+    while (openPipes.find(n) != openPipes.end()) {
+        n++;
+    }
+    openPipes.insert(n);
+    return n;
+}
+
+void ofxVideoRecorder::retirePipeNumber(int num){
+    if(!openPipes.erase(num)){
+        ofLogNotice() << "ofxVideoRecorder::retirePipeNumber(): trying to retire a pipe number that is not being tracked: " << num << endl;
+    }
 }

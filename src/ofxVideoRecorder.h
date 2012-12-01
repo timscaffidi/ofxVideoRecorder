@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
-#include <queue>
+#include <set>
 
 template <typename T>
 struct lockFreeQueue {
@@ -132,5 +132,9 @@ private:
     execThread ffmpegThread;
 //    ofFile videoPipe, audioPipe;
     int videoPipeFd, audioPipeFd;
-    static int pipeNumber;
+    int pipeNumber;
+    
+    static set<int> openPipes;
+    static int requestPipeNumber();
+    static void retirePipeNumber(int num);
 };
