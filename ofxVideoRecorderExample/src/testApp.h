@@ -28,6 +28,8 @@ public:
     bool bRecording;
     int sampleRate;
     int channels;
+    string fileName;
+    string fileExt;
     
     ofFbo recordFbo;
     ofPixels recordPixels;

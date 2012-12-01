@@ -11,6 +11,9 @@ void testApp::setup(){
     vidGrabber.initGrabber(640, 360);
 //    vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg")); // use this is you have ffmpeg installed in your data folder
     
+    fileName = "testMovie";
+    fileExt = ".mov";
+    
     vidRecorder.setVideoCodec("h264");
     vidRecorder.setVideoBitrate("800k");
     
@@ -72,9 +75,9 @@ void testApp::keyReleased(int key){
     if(key=='r'){
         bRecording = !bRecording;
         if(bRecording && !vidRecorder.isInitialized()) {
-            vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30, sampleRate, channels);
-            //    vidRecorder.setup("testMovie"+ofGetTimestampString()+".mov", vidGrabber.getWidth(), vidGrabber.getHeight(), 30);
-            //    vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
+            vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, vidGrabber.getWidth(), vidGrabber.getHeight(), 30, sampleRate, channels);
+//          vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, vidGrabber.getWidth(), vidGrabber.getHeight(), 30); // no audio
+//          vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 15, "-vcodec h264 -sameq -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
         }
     }
     if(key=='c'){
