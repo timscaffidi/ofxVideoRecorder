@@ -5,17 +5,21 @@ void testApp::setup(){
     sampleRate = 44100;
     channels = 1;
 
+    ofSetFrameRate(60);
     ofSetLogLevel(OF_LOG_VERBOSE);
     vidGrabber.setDesiredFrameRate(30);
     vidGrabber.initGrabber(640, 480);
 //    vidRecorder.setFfmpegLocation(ofFilePath::getAbsolutePath("ffmpeg")); // use this is you have ffmpeg installed in your data folder
 
     fileName = "testMovie";
-    fileExt = ".mov";
+    fileExt = ".mov"; // ffmpeg uses the extension to determine the container type. run 'ffmpeg -formats' to see supported formats
 
-    vidRecorder.setVideoCodec("mpeg4");
-    vidRecorder.setVideoBitrate("2000k");
-    vidRecorder.setAudioCodec("pcm_s16le");
+    // override the default codecs if you like
+    // run 'ffmpeg -codecs' to find out what your implementation supports (or -formats on some older versions)
+    vidRecorder.setVideoCodec("mpeg4"); 
+    vidRecorder.setVideoBitrate("800k");
+    vidRecorder.setAudioCodec("mp3");
+    vidRecorder.setAudioBitrate("192k");
 
 //    soundStream.listDevices();
 //    soundStream.setDeviceID(11);
