@@ -47,7 +47,7 @@ void execThread::threadedFunction(){
 ofxVideoDataWriterThread::ofxVideoDataWriterThread(){};
 void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> * q){
     this->filePath = filePath;
-    fd = NULL;
+    fd = -1;
     queue = q;
     bIsWriting = false;
     bClose = false;
@@ -55,7 +55,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
 }
 
 void ofxVideoDataWriterThread::threadedFunction(){
-    if(fd == NULL){
+    if(fd == -1){
         fd = ::open(filePath.c_str(), O_WRONLY);
     }
 
@@ -99,14 +99,14 @@ void ofxVideoDataWriterThread::signal(){
 ofxAudioDataWriterThread::ofxAudioDataWriterThread(){};
 void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameShort *> *q){
     this->filePath = filePath;
-    fd = NULL;
+    fd = -1;
     queue = q;
     bIsWriting = false;
     startThread(true, false);
 }
 
 void ofxAudioDataWriterThread::threadedFunction(){
-    if(fd == NULL){
+    if(fd == -1){
         fd = ::open(filePath.c_str(), O_WRONLY);
     }
 
@@ -322,47 +322,22 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
 
 void ofxVideoRecorder::close()
 {
-    //this whole part could be cleaned up and is kludgy.
-    //all of this is an attempt to make sure that both pipes are clear,
-    //not stuck writing, and ffmpeg is not stuck waiting for more data
-    //hopefully there is a better way that I'll figure out at some point
-    // it SEEMS to be working now, but may stall in some cases
-    // if it does stall, kill ffmpeg. you will need to re-encode the video file unfortunately
+    if(!bIsInitialized) return;
 
+    //set pipes to non_blocking so we dont get stuck at the final writes
     setNonblocking(audioPipeFd);
     setNonblocking(videoPipeFd);
-    bFinishing = true; // override frame doubling/dropping while finishing up
-    while(frames.size() > 0 || audioFrames.size() > 0 || audioThread.isWriting() || videoThread.isWriting()) {
+    
+    while(frames.size() > 0 && audioFrames.size() > 0) {
+        // if there are frames in the queue or the thread is writing, signal them until the work is done.
         videoThread.signal();
         audioThread.signal();
-        //ofSleepMillis(5);
-        //set pipes to non_blocking so we dont get stuck at the final writes
-//        if(frames.size() <=1){
-//            setNonblocking(audioPipeFd);
-//            setNonblocking(videoPipeFd);
-//        }
-//        if (audioFrames.size() < sampleRate/frameRate) {
-//            setNonblocking(audioPipeFd);
-//            setNonblocking(videoPipeFd);
-//        }
-
-//        if ((frames.size() > 0 || videoThread.isWriting()) && audioFrames.size() == 0) {
-//            // video frame in queue, or video thread stuck in a write. try to add enough audio data for ffmpeg to consume it
-//            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing video, adding blank audio samples" <<endl;
-//            int numSamples = audioChannels*sampleRate/frameRate;
-//            float * samples = new float[numSamples];
-//            memset(samples, 0, sizeof(float)*numSamples);
-//            addAudioSamples(samples, numSamples, audioChannels);
-//            delete [] samples;
-//        }
-//        else if(frames.size() == 0 && (audioFrames.size() > 0 || audioThread.isWriting())) {
-//            // audio samples in queue, or audioThread stuck in a write. add blank video frame
-//            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing audio, adding blank video frames" <<endl;
-//            ofPixels pixels;
-//            pixels.allocate(width,height,3);
-//            addFrame(pixels);
-//        }
     }
+    
+    //at this point all data that ffmpeg wants should have been consumed
+    // one of the threads may still be trying to write a frame,
+    // but once close() gets called they will exit the non_blocking write loop
+    // and hopefully close successfully
 
     bIsInitialized = false;
 
