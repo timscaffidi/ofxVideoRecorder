@@ -45,14 +45,20 @@ void execThread::threadedFunction(){
 
 //===============================
 ofxVideoDataWriterThread::ofxVideoDataWriterThread(){};
-void ofxVideoDataWriterThread::setup(int file_desc, lockFreeQueue<ofPixels *> * q){
-    fd = file_desc;
+void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> * q){
+    this->filePath = filePath;
+    fd = NULL;
     queue = q;
     bIsWriting = false;
+    bClose = false;
     startThread(true, false);
 }
 
 void ofxVideoDataWriterThread::threadedFunction(){
+    if(fd == NULL){
+        fd = ::open(filePath.c_str(), O_WRONLY);
+    }
+
     while(isThreadRunning())
     {
         ofPixels * frame = NULL;
@@ -60,7 +66,19 @@ void ofxVideoDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
-            int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
+            while(b_remaining > 0)
+            {
+                int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
+                if(b_written > 0){
+                    b_remaining -= b_written;
+                    b_offset += b_written;
+                }
+                else {
+                    if(bClose){
+                        break; // quit writing so we can close the file
+                    }
+                }
+            }
             bIsWriting = false;
             frame->clear();
             delete frame;
@@ -69,6 +87,8 @@ void ofxVideoDataWriterThread::threadedFunction(){
             condition.wait(conditionMutex);
         }
     }
+
+    ::close(fd);
 }
 
 void ofxVideoDataWriterThread::signal(){
@@ -77,23 +97,38 @@ void ofxVideoDataWriterThread::signal(){
 
 //===============================
 ofxAudioDataWriterThread::ofxAudioDataWriterThread(){};
-void ofxAudioDataWriterThread::setup(int file_desc, lockFreeQueue<audioFrameShort *> *q){
-    fd = file_desc;
+void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameShort *> *q){
+    this->filePath = filePath;
+    fd = NULL;
     queue = q;
     bIsWriting = false;
     startThread(true, false);
 }
 
 void ofxAudioDataWriterThread::threadedFunction(){
+    if(fd == NULL){
+        fd = ::open(filePath.c_str(), O_WRONLY);
+    }
+
     while(isThreadRunning())
     {
         audioFrameShort * frame = NULL;
         if(queue->Consume(frame) && frame){
             bIsWriting = true;
-
             int b_offset = 0;
             int b_remaining = frame->size*sizeof(short);
-            int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining);
+            while(b_remaining > 0){
+                int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining);
+                if(b_written > 0){
+                    b_remaining -= b_written;
+                    b_offset += b_written;
+                }
+                else {
+                    if(bClose){
+                        break; // quit writing so we can close the file
+                    }
+                }
+            }
             bIsWriting = false;
             delete [] frame->data;
             delete frame;
@@ -102,6 +137,8 @@ void ofxAudioDataWriterThread::threadedFunction(){
             condition.wait(conditionMutex);
         }
     }
+
+    ::close(fd);
 }
 void ofxAudioDataWriterThread::signal(){
     condition.signal();
@@ -213,15 +250,17 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     }
     cmd << " "+ outputString +"'";
 
+    //cerr << cmd.str();
+
     ffmpegThread.setup(cmd.str()); // start ffmpeg thread, will wait for input pipes to be opened
 
     if(bRecordAudio){
-        audioPipeFd = ::open(audioPipePath.c_str(), O_WRONLY);
-        audioThread.setup(audioPipeFd, &audioFrames);
+//        audioPipeFd = ::open(audioPipePath.c_str(), O_WRONLY);
+        audioThread.setup(audioPipePath, &audioFrames);
     }
     if(bRecordVideo){
-        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
-        videoThread.setup(videoPipeFd, &frames);
+//        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
+        videoThread.setup(videoPipePath, &frames);
     }
     bIsInitialized = true;
 
@@ -290,51 +329,48 @@ void ofxVideoRecorder::close()
     // it SEEMS to be working now, but may stall in some cases
     // if it does stall, kill ffmpeg. you will need to re-encode the video file unfortunately
 
+    setNonblocking(audioPipeFd);
+    setNonblocking(videoPipeFd);
     bFinishing = true; // override frame doubling/dropping while finishing up
     while(frames.size() > 0 || audioFrames.size() > 0 || audioThread.isWriting() || videoThread.isWriting()) {
         videoThread.signal();
         audioThread.signal();
         //ofSleepMillis(5);
         //set pipes to non_blocking so we dont get stuck at the final writes
-        if(frames.size() <=1){
-            setNonblocking(audioPipeFd);
-            setNonblocking(videoPipeFd);
-        }
-        if (audioFrames.size() < sampleRate/frameRate) {
-            setNonblocking(audioPipeFd);
-            setNonblocking(videoPipeFd);
-        }
+//        if(frames.size() <=1){
+//            setNonblocking(audioPipeFd);
+//            setNonblocking(videoPipeFd);
+//        }
+//        if (audioFrames.size() < sampleRate/frameRate) {
+//            setNonblocking(audioPipeFd);
+//            setNonblocking(videoPipeFd);
+//        }
 
-        if ((frames.size() > 0 || videoThread.isWriting()) && audioFrames.size() == 0) {
-            // video frame in queue, or video thread stuck in a write. try to add enough audio data for ffmpeg to consume it
-            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing video, adding blank audio samples" <<endl;
-            int numSamples = audioChannels*sampleRate/frameRate;
-            float * samples = new float[numSamples];
-            memset(samples, 0, sizeof(float)*numSamples);
-            addAudioSamples(samples, numSamples, audioChannels);
-            delete [] samples;
-        }
-        else if(frames.size() == 0 && (audioFrames.size() > 0 || audioThread.isWriting())) {
-            // audio samples in queue, or audioThread stuck in a write. add blank video frame
-            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing audio, adding blank video frames" <<endl;
-            ofPixels pixels;
-            pixels.allocate(width,height,3);
-            addFrame(pixels);
-        }
+//        if ((frames.size() > 0 || videoThread.isWriting()) && audioFrames.size() == 0) {
+//            // video frame in queue, or video thread stuck in a write. try to add enough audio data for ffmpeg to consume it
+//            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing video, adding blank audio samples" <<endl;
+//            int numSamples = audioChannels*sampleRate/frameRate;
+//            float * samples = new float[numSamples];
+//            memset(samples, 0, sizeof(float)*numSamples);
+//            addAudioSamples(samples, numSamples, audioChannels);
+//            delete [] samples;
+//        }
+//        else if(frames.size() == 0 && (audioFrames.size() > 0 || audioThread.isWriting())) {
+//            // audio samples in queue, or audioThread stuck in a write. add blank video frame
+//            ofLogVerbose() <<"ofxVideoRecorder::close(): stuck writing audio, adding blank video frames" <<endl;
+//            ofPixels pixels;
+//            pixels.allocate(width,height,3);
+//            addFrame(pixels);
+//        }
     }
 
-
-    videoThread.stopThread();
-    videoThread.signal();
-    audioThread.stopThread();
-    audioThread.signal();
     bIsInitialized = false;
 
     if (bRecordVideo) {
-        ::close(videoPipeFd);
+        videoThread.close();
     }
     if (bRecordAudio) {
-        ::close(audioPipeFd);
+        audioThread.close();
     }
 
     retirePipeNumber(pipeNumber);

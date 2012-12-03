@@ -29,8 +29,8 @@ struct lockFreeQueue {
     int size() { return distance(iHead,iTail)-1; }
     typename std::list<T>::iterator getHead() {return iHead; }
     typename std::list<T>::iterator getTail() {return iTail; }
-    
-    
+
+
 private:
     typedef std::list<T> TList;
     TList list;
@@ -55,34 +55,40 @@ class ofxVideoDataWriterThread : public ofThread {
 public:
     ofxVideoDataWriterThread();
 //    void setup(ofFile *file, lockFreeQueue<ofPixels *> * q);
-    void setup(int file_desc, lockFreeQueue<ofPixels *> * q);
+    void setup(string filePath, lockFreeQueue<ofPixels *> * q);
     void threadedFunction();
     void signal();
     bool isWriting() { return bIsWriting; }
+    void close() { bClose = true; stopThread(); signal(); }
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
 //    ofFile * writer;
+    string filePath;
     int fd;
     lockFreeQueue<ofPixels *> * queue;
     bool bIsWriting;
+    bool bClose;
 };
 
 class ofxAudioDataWriterThread : public ofThread {
 public:
     ofxAudioDataWriterThread();
 //    void setup(ofFile *file, lockFreeQueue<audioFrameShort *> * q);
-    void setup(int file_desc, lockFreeQueue<audioFrameShort *> * q);
+    void setup(string filePath, lockFreeQueue<audioFrameShort *> * q);
     void threadedFunction();
     void signal();
     bool isWriting() { return bIsWriting; }
+    void close() { bClose = true; stopThread(); signal();  }
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
 //    ofFile * writer;
+    string filePath;
     int fd;
     lockFreeQueue<audioFrameShort *> * queue;
     bool bIsWriting;
+    bool bClose;
 };
 
 class ofxVideoRecorder
@@ -96,17 +102,17 @@ public:
     void addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
     void close();
-    
+
     void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     void setVideoCodec(string codec) { videoCodec = codec; }
     void setAudioCodec(string codec) { audioCodec = codec; }
     void setVideoBitrate(string bitrate) { videoBitrate = bitrate; }
     void setAudioBitrate(string bitrate) { audioBitrate = bitrate; }
-    
+
     int getVideoQueueSize(){ return frames.size(); }
     int getAudioQueueSize(){ return audioFrames.size(); }
     bool isInitialized(){ return bIsInitialized; }
-    
+
     string getMoviePath(){ return moviePath; }
     int getWidth(){return width;}
     int getHeight(){return height;}
@@ -133,7 +139,7 @@ private:
 //    ofFile videoPipe, audioPipe;
     int videoPipeFd, audioPipeFd;
     int pipeNumber;
-    
+
     static set<int> openPipes;
     static int requestPipeNumber();
     static void retirePipeNumber(int num);
