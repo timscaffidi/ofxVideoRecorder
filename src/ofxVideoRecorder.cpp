@@ -150,7 +150,7 @@ ofxVideoRecorder::ofxVideoRecorder()
     bIsInitialized = false;
     ffmpegLocation = "ffmpeg";
     videoCodec = "mpeg4";
-    audioCodec = "aac";
+    audioCodec = "pcm_s16le";
     videoBitrate = "2000k";
     audioBitrate = "128k";
 }
