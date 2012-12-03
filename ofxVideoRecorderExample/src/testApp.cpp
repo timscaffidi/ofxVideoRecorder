@@ -4,7 +4,6 @@
 void testApp::setup(){
     sampleRate = 44100;
     channels = 1;
-    ofSetFrameRate(30);
 
     ofSetLogLevel(OF_LOG_VERBOSE);
     vidGrabber.setDesiredFrameRate(30);
