@@ -276,7 +276,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
             //if also recording audio, check the overall recorded time for audio and video to make sure audio is not going out of sync
             //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
             double videoRecordedTime = videoFramesRecorded / frameRate;
-            double audioRecordedTime = audioSamplesRecorded  / (double)sampleRate;
+            double audioRecordedTime = (audioSamplesRecorded/audioChannels)  / (double)sampleRate;
             double avDelta = audioRecordedTime - videoRecordedTime;
 
             if(avDelta > 1.0/frameRate) {
