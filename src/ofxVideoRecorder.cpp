@@ -153,6 +153,7 @@ ofxVideoRecorder::ofxVideoRecorder()
     audioCodec = "pcm_s16le";
     videoBitrate = "2000k";
     audioBitrate = "128k";
+    pixelFormat = "rgb24";
 }
 
 bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels)
@@ -243,7 +244,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
         cmd << " -an";
     }
     if(bRecordVideo){ // video input options and file
-        cmd << " -r "<< fps << " -s " << w << "x" << h << " -f rawvideo -pix_fmt rgb24 -i " << videoPipePath << " -r " << fps;
+        cmd << " -r "<< fps << " -s " << w << "x" << h << " -f rawvideo -pix_fmt " << pixelFormat <<" -i " << videoPipePath << " -r " << fps;
     }
     else { // no video stream
         cmd << " -vn";
