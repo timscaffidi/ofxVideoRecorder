@@ -153,7 +153,7 @@ ofxVideoRecorder::ofxVideoRecorder()
     audioCodec = "pcm_s16le";
     videoBitrate = "2000k";
     audioBitrate = "128k";
-	pixelFormat = "rgb24";
+    pixelFormat = "rgb24";
 }
 
 bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels)

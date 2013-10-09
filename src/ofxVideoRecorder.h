@@ -109,9 +109,9 @@ public:
     void setVideoBitrate(string bitrate) { videoBitrate = bitrate; }
     void setAudioBitrate(string bitrate) { audioBitrate = bitrate; }
 
-	void setPixelFormat( string pixelF){ //rgb24 || gray, default is rgb24
-		pixelFormat = pixelF;
-	};
+    void setPixelFormat( string pixelF){ //rgb24 || gray, default is rgb24
+        pixelFormat = pixelF;
+    };
 
     int getVideoQueueSize(){ return frames.size(); }
     int getAudioQueueSize(){ return audioFrames.size(); }
