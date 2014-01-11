@@ -249,7 +249,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     else { // no video stream
         cmd << " -vn";
     }
-    cmd << " "+ outputString +"'";
+    cmd << " "+ outputString +"' &";
 
     //cerr << cmd.str();
 
