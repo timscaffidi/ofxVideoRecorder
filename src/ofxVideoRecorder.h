@@ -95,9 +95,9 @@ class ofxVideoRecorder
 {
 public:
     ofxVideoRecorder();
-    bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0);
-    bool setupCustomOutput(int w, int h, float fps, string outputString);
-    bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString);
+    bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool silent=false);
+    bool setupCustomOutput(int w, int h, float fps, string outputString, bool silent=false);
+    bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool silent=false);
     void setQuality(ofImageQualityType q);
     void addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
@@ -133,6 +133,7 @@ private:
     bool bRecordAudio;
     bool bRecordVideo;
     bool bFinishing;
+    bool bIsSilent;
     lockFreeQueue<ofPixels *> frames;
     lockFreeQueue<audioFrameShort *> audioFrames;
     unsigned long long audioSamplesRecorded;

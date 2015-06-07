@@ -156,7 +156,7 @@ ofxVideoRecorder::ofxVideoRecorder()
     pixelFormat = "rgb24";
 }
 
-bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels)
+bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool silent)
 {
     if(bIsInitialized)
     {
@@ -176,19 +176,21 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRa
     << " -ab " << audioBitrate
     << " " << absFilePath;
 
-    return setupCustomOutput(w, h, fps, sampleRate, channels, outputSettings.str());
+    return setupCustomOutput(w, h, fps, sampleRate, channels, outputSettings.str(), silent);
 }
 
-bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, string outputString){
-    return setupCustomOutput(w, h, fps, 0, 0, outputString);
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, string outputString, bool silent){
+    return setupCustomOutput(w, h, fps, 0, 0, outputString, silent);
 }
 
-bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString)
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool silent)
 {
     if(bIsInitialized)
     {
         close();
     }
+    
+    bIsSilent = silent;
 
     bRecordAudio = (sampleRate > 0 && channels > 0);
     bRecordVideo = (w > 0 && h > 0 && fps > 0);
@@ -236,7 +238,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
 
     stringstream cmd;
     // basic ffmpeg invocation, -y option overwrites output file
-    cmd << "bash --login -c '" << ffmpegLocation << " -y";
+    cmd << "bash --login -c '" << ffmpegLocation << (bIsSilent?" -loglevel quiet ":" ") << "-y";
     if(bRecordAudio){
         cmd << " -acodec pcm_s16le -f s16le -ar " << sampleRate << " -ac " << audioChannels << " -i " << audioPipePath;
     }
