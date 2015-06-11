@@ -327,14 +327,34 @@ void ofxVideoRecorder::close()
 {
     if(!bIsInitialized) return;
 
-    //set pipes to non_blocking so we dont get stuck at the final writes
-    setNonblocking(audioPipeFd);
-    setNonblocking(videoPipeFd);
-    
-    while(frames.size() > 0 && audioFrames.size() > 0) {
-        // if there are frames in the queue or the thread is writing, signal them until the work is done.
-        videoThread.signal();
-        audioThread.signal();
+    if(bRecordVideo && bRecordAudio) {
+        //set pipes to non_blocking so we dont get stuck at the final writes
+        setNonblocking(audioPipeFd);
+        setNonblocking(videoPipeFd);
+
+        while(frames.size() > 0 && audioFrames.size() > 0) {
+            // if there are frames in the queue or the thread is writing, signal them until the work is done.
+            videoThread.signal();
+            audioThread.signal();
+        }
+    }
+    else if(bRecordVideo) {
+        //set pipes to non_blocking so we dont get stuck at the final writes
+        setNonblocking(videoPipeFd);
+
+        while(frames.size() > 0) {
+            // if there are frames in the queue or the thread is writing, signal them until the work is done.
+            videoThread.signal();
+        }
+    }
+    else if(bRecordAudio) {
+        //set pipes to non_blocking so we dont get stuck at the final writes
+        setNonblocking(audioPipeFd);
+
+        while(audioFrames.size() > 0) {
+            // if there are frames in the queue or the thread is writing, signal them until the work is done.
+            audioThread.signal();
+        }
     }
     
     //at this point all data that ffmpeg wants should have been consumed
