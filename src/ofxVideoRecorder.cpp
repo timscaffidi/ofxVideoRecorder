@@ -189,7 +189,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     {
         close();
     }
-    
+
     bIsSilent = silent;
 
     bRecordAudio = (sampleRate > 0 && channels > 0);
