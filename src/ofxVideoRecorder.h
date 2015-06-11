@@ -113,6 +113,9 @@ public:
         pixelFormat = pixelF;
     };
 
+    unsigned long long getNumVideoFramesRecorded() { return videoFramesRecorded; }
+    unsigned long long getNumAudioSamplesRecorded() { return audioSamplesRecorded; }
+
     int getVideoQueueSize(){ return frames.size(); }
     int getAudioQueueSize(){ return audioFrames.size(); }
     bool isInitialized(){ return bIsInitialized; }
