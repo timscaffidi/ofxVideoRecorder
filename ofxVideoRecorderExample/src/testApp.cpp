@@ -84,6 +84,15 @@ void testApp::keyReleased(int key){
 //          vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, vidGrabber.getWidth(), vidGrabber.getHeight(), 30); // no audio
 //            vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, 0,0,0, sampleRate, channels); // no video
 //          vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 30, sampleRate, channels, "-vcodec mpeg4 -b 1600k -acodec mp2 -ab 128k -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
+            
+            // Start recording
+            vidRecorder.start();
+        }
+        else if(!bRecording && vidRecorder.isInitialized()) {
+            vidRecorder.setPaused(true);
+        }
+        else if(bRecording && vidRecorder.isInitialized()) {
+            vidRecorder.setPaused(false);
         }
     }
     if(key=='c'){

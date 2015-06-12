@@ -265,13 +265,22 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
 //        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
         videoThread.setup(videoPipePath, &frames);
     }
+    
     bIsInitialized = true;
-
+    bIsRecording = false;
+    bIsPaused = false;
+    
+    startTime = 0;
+    recordingDuration = 0;
+    totalRecordingDuration = 0;
+    
     return bIsInitialized;
 }
 
 void ofxVideoRecorder::addFrame(const ofPixels &pixels)
 {
+    if (!bIsRecording || bIsPaused) return;
+    
     if(bIsInitialized && bRecordVideo)
     {
         int framesToAdd = 1; //default add one frame per request
@@ -297,6 +306,29 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
                 ofLogVerbose() << "ofxVideoRecorder: avDelta = " << avDelta << ". Too many video frames, skipping.\n";
             }
         }
+        
+        else if(!bRecordAudio && !bFinishing){
+            //if just recording video, synchronize the video against the system clock
+            //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
+            double videoRecordedTime = videoFramesRecorded / frameRate;
+            double svDelta = systemClock() - videoRecordedTime;
+
+            if(svDelta > 1.0/frameRate) {
+                //no enought video frames, we need to send extra video frames.
+                int numFramesCopied = 0;
+                while(svDelta > 1.0/frameRate) {
+                    framesToAdd++;
+                    svDelta -= 1.0/frameRate;
+                }
+                ofLogVerbose() << "ofxVideoRecorder: svDelta = " << svDelta << ". Not enough video frames for desired frame rate, copied this frame " << framesToAdd << " times.\n";
+            }
+            else if(svDelta < -1.0/frameRate){
+                //more than one video frame is waiting, skip this frame
+                framesToAdd = 0;
+                ofLogVerbose() << "ofxVideoRecorder: svDelta = " << svDelta << ". Too many video frames, skipping.\n";
+            }
+        }
+        
         for(int i=0;i<framesToAdd;i++){
             //add desired number of frames
             frames.Produce(new ofPixels(pixels));
@@ -308,6 +340,8 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
 }
 
 void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numChannels){
+    if (!bIsRecording || bIsPaused) return;
+    
     if(bIsInitialized && bRecordAudio){
         int size = bufferSize*numChannels;
         audioFrameShort * shortSamples = new audioFrameShort;
@@ -323,9 +357,53 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
     }
 }
 
+void ofxVideoRecorder::start()
+{
+    if(!bIsInitialized) return;
+    
+    if (bIsRecording) {
+        //  We are already recording. No need to go further.
+       return;
+    }
+    
+    // Start a recording.
+    bIsRecording = true;
+    bIsPaused = false;
+    startTime = ofGetElapsedTimef();
+    
+    cout << "Recording." << endl;
+}
+
+void ofxVideoRecorder::setPaused(bool bPause)
+{
+    if(!bIsInitialized) return;
+    
+    if (!bIsRecording || bIsPaused == bPause) {
+        //  We are not recording or we are already paused. No need to go further.
+        return;
+    }
+    
+    // Pause the recording
+    bIsPaused = bPause;
+    
+    if (bIsPaused) {
+        totalRecordingDuration += recordingDuration;
+        
+        // Log
+        cout << "Paused." << endl;
+    } else {
+        startTime = ofGetElapsedTimef();
+        
+        // Log
+        cout << "Recording." << endl;
+    }
+}
+
 void ofxVideoRecorder::close()
 {
     if(!bIsInitialized) return;
+    
+    bIsRecording = false;
 
     if(bRecordVideo && bRecordAudio) {
         //set pipes to non_blocking so we dont get stuck at the final writes
@@ -376,6 +454,12 @@ void ofxVideoRecorder::close()
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
 
+}
+
+float ofxVideoRecorder::systemClock()
+{
+    recordingDuration = ofGetElapsedTimef() - startTime;
+    return totalRecordingDuration + recordingDuration;
 }
 
 set<int> ofxVideoRecorder::openPipes;

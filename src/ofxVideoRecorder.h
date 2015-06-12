@@ -101,7 +101,10 @@ public:
     void setQuality(ofImageQualityType q);
     void addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
+    
+    void start();
     void close();
+    void setPaused(bool bPause);
 
     void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     void setVideoCodec(string codec) { videoCodec = codec; }
@@ -118,12 +121,15 @@ public:
 
     int getVideoQueueSize(){ return frames.size(); }
     int getAudioQueueSize(){ return audioFrames.size(); }
+    
     bool isInitialized(){ return bIsInitialized; }
+    bool isRecording() { return bIsRecording; };
+    bool isPaused() { return bIsPaused; };
 
     string getMoviePath(){ return moviePath; }
     int getWidth(){return width;}
     int getHeight(){return height;}
-
+    
 private:
     string fileName;
     string moviePath;
@@ -132,11 +138,20 @@ private:
     string videoCodec, audioCodec, videoBitrate, audioBitrate, pixelFormat;
     int width, height, sampleRate, audioChannels;
     float frameRate;
+    
     bool bIsInitialized;
     bool bRecordAudio;
     bool bRecordVideo;
+    bool bIsRecording;
+    bool bIsPaused;
     bool bFinishing;
     bool bIsSilent;
+    
+    float startTime;
+    float recordingDuration;
+    float totalRecordingDuration;
+    float systemClock();
+    
     lockFreeQueue<ofPixels *> frames;
     lockFreeQueue<audioFrameShort *> audioFrames;
     unsigned long long audioSamplesRecorded;
