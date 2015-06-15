@@ -156,7 +156,7 @@ ofxVideoRecorder::ofxVideoRecorder()
     pixelFormat = "rgb24";
 }
 
-bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool silent)
+bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool sysClockSync, bool silent)
 {
     if(bIsInitialized)
     {
@@ -176,14 +176,14 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRa
     << " -ab " << audioBitrate
     << " " << absFilePath;
 
-    return setupCustomOutput(w, h, fps, sampleRate, channels, outputSettings.str(), silent);
+    return setupCustomOutput(w, h, fps, sampleRate, channels, outputSettings.str(), sysClockSync, silent);
 }
 
-bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, string outputString, bool silent){
-    return setupCustomOutput(w, h, fps, 0, 0, outputString, silent);
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync, bool silent){
+    return setupCustomOutput(w, h, fps, 0, 0, outputString, sysClockSync, silent);
 }
 
-bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool silent)
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync, bool silent)
 {
     if(bIsInitialized)
     {
@@ -191,6 +191,7 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     }
 
     bIsSilent = silent;
+    bSysClockSync = sysClockSync;
 
     bRecordAudio = (sampleRate > 0 && channels > 0);
     bRecordVideo = (w > 0 && h > 0 && fps > 0);
@@ -284,48 +285,37 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
     if(bIsInitialized && bRecordVideo)
     {
         int framesToAdd = 1; //default add one frame per request
-        if(bRecordAudio && !bFinishing){
-            //if also recording audio, check the overall recorded time for audio and video to make sure audio is not going out of sync
-            //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
-            double videoRecordedTime = videoFramesRecorded / frameRate;
-            double audioRecordedTime = (audioSamplesRecorded/audioChannels)  / (double)sampleRate;
-            double avDelta = audioRecordedTime - videoRecordedTime;
-
-            if(avDelta > 1.0/frameRate) {
-                //more than one video frame's worth of audio data is waiting, we need to send extra video frames.
-                int numFramesCopied = 0;
-                while(avDelta > 1.0/frameRate) {
-                    framesToAdd++;
-                    avDelta -= 1.0/frameRate;
-                }
-                ofLogVerbose() << "ofxVideoRecorder: avDelta = " << avDelta << ". Not enough video frames for desired frame rate, copied this frame " << framesToAdd << " times.\n";
-            }
-            else if(avDelta < -1.0/frameRate){
-                //more than one video frame is waiting, skip this frame
-                framesToAdd = 0;
-                ofLogVerbose() << "ofxVideoRecorder: avDelta = " << avDelta << ". Too many video frames, skipping.\n";
-            }
-        }
         
-        else if(!bRecordAudio && !bFinishing){
-            //if just recording video, synchronize the video against the system clock
-            //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
+        if((bRecordAudio || bSysClockSync) && !bFinishing){
+            
+            double syncDelta;
             double videoRecordedTime = videoFramesRecorded / frameRate;
-            double svDelta = systemClock() - videoRecordedTime;
 
-            if(svDelta > 1.0/frameRate) {
+            if (bRecordAudio) {
+                //if also recording audio, check the overall recorded time for audio and video to make sure audio is not going out of sync
+                //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
+                double audioRecordedTime = (audioSamplesRecorded/audioChannels)  / (double)sampleRate;
+                syncDelta = audioRecordedTime - videoRecordedTime;
+            }
+            else {
+                //if just recording video, synchronize the video against the system clock
+                //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
+                syncDelta = systemClock() - videoRecordedTime;
+            }
+            
+            if(syncDelta > 1.0/frameRate) {
                 //no enought video frames, we need to send extra video frames.
                 int numFramesCopied = 0;
-                while(svDelta > 1.0/frameRate) {
+                while(syncDelta > 1.0/frameRate) {
                     framesToAdd++;
-                    svDelta -= 1.0/frameRate;
+                    syncDelta -= 1.0/frameRate;
                 }
-                ofLogVerbose() << "ofxVideoRecorder: svDelta = " << svDelta << ". Not enough video frames for desired frame rate, copied this frame " << framesToAdd << " times.\n";
+                ofLogVerbose() << "ofxVideoRecorder: recDelta = " << syncDelta << ". Not enough video frames for desired frame rate, copied this frame " << framesToAdd << " times.\n";
             }
-            else if(svDelta < -1.0/frameRate){
+            else if(syncDelta < -1.0/frameRate){
                 //more than one video frame is waiting, skip this frame
                 framesToAdd = 0;
-                ofLogVerbose() << "ofxVideoRecorder: svDelta = " << svDelta << ". Too many video frames, skipping.\n";
+                ofLogVerbose() << "ofxVideoRecorder: recDelta = " << syncDelta << ". Too many video frames, skipping.\n";
             }
         }
         

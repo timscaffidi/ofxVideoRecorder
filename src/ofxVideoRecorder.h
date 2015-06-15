@@ -95,9 +95,9 @@ class ofxVideoRecorder
 {
 public:
     ofxVideoRecorder();
-    bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool silent=false);
-    bool setupCustomOutput(int w, int h, float fps, string outputString, bool silent=false);
-    bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool silent=false);
+    bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
+    bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
+    bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync=false, bool silent=false);
     void setQuality(ofImageQualityType q);
     void addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
@@ -125,6 +125,7 @@ public:
     bool isInitialized(){ return bIsInitialized; }
     bool isRecording() { return bIsRecording; };
     bool isPaused() { return bIsPaused; };
+    bool isSyncAgainstSysClock() { return bSysClockSync; };
 
     string getMoviePath(){ return moviePath; }
     int getWidth(){return width;}
@@ -147,6 +148,7 @@ private:
     bool bFinishing;
     bool bIsSilent;
     
+    bool bSysClockSync;
     float startTime;
     float recordingDuration;
     float totalRecordingDuration;
