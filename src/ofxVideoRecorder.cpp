@@ -266,28 +266,28 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
 //        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
         videoThread.setup(videoPipePath, &frames);
     }
-    
+
     bIsInitialized = true;
     bIsRecording = false;
     bIsPaused = false;
-    
+
     startTime = 0;
     recordingDuration = 0;
     totalRecordingDuration = 0;
-    
+
     return bIsInitialized;
 }
 
 void ofxVideoRecorder::addFrame(const ofPixels &pixels)
 {
     if (!bIsRecording || bIsPaused) return;
-    
+
     if(bIsInitialized && bRecordVideo)
     {
         int framesToAdd = 1; //default add one frame per request
-        
+
         if((bRecordAudio || bSysClockSync) && !bFinishing){
-            
+
             double syncDelta;
             double videoRecordedTime = videoFramesRecorded / frameRate;
 
@@ -302,7 +302,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
                 //this also handles incoming dynamic framerate while maintaining desired outgoing framerate
                 syncDelta = systemClock() - videoRecordedTime;
             }
-            
+
             if(syncDelta > 1.0/frameRate) {
                 //no enought video frames, we need to send extra video frames.
                 int numFramesCopied = 0;
@@ -318,7 +318,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
                 ofLogVerbose() << "ofxVideoRecorder: recDelta = " << syncDelta << ". Too many video frames, skipping.\n";
             }
         }
-        
+
         for(int i=0;i<framesToAdd;i++){
             //add desired number of frames
             frames.Produce(new ofPixels(pixels));
@@ -331,7 +331,7 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
 
 void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numChannels){
     if (!bIsRecording || bIsPaused) return;
-    
+
     if(bIsInitialized && bRecordAudio){
         int size = bufferSize*numChannels;
         audioFrameShort * shortSamples = new audioFrameShort;
@@ -350,40 +350,40 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
 void ofxVideoRecorder::start()
 {
     if(!bIsInitialized) return;
-    
+
     if (bIsRecording) {
         //  We are already recording. No need to go further.
        return;
     }
-    
+
     // Start a recording.
     bIsRecording = true;
     bIsPaused = false;
     startTime = ofGetElapsedTimef();
-    
+
     cout << "Recording." << endl;
 }
 
 void ofxVideoRecorder::setPaused(bool bPause)
 {
     if(!bIsInitialized) return;
-    
+
     if (!bIsRecording || bIsPaused == bPause) {
         //  We are not recording or we are already paused. No need to go further.
         return;
     }
-    
+
     // Pause the recording
     bIsPaused = bPause;
-    
+
     if (bIsPaused) {
         totalRecordingDuration += recordingDuration;
-        
+
         // Log
         cout << "Paused." << endl;
     } else {
         startTime = ofGetElapsedTimef();
-        
+
         // Log
         cout << "Recording." << endl;
     }
@@ -392,7 +392,7 @@ void ofxVideoRecorder::setPaused(bool bPause)
 void ofxVideoRecorder::close()
 {
     if(!bIsInitialized) return;
-    
+
     bIsRecording = false;
 
     if(bRecordVideo && bRecordAudio) {
@@ -424,7 +424,7 @@ void ofxVideoRecorder::close()
             audioThread.signal();
         }
     }
-    
+
     //at this point all data that ffmpeg wants should have been consumed
     // one of the threads may still be trying to write a frame,
     // but once close() gets called they will exit the non_blocking write loop
