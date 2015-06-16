@@ -361,7 +361,7 @@ void ofxVideoRecorder::start()
     bIsPaused = false;
     startTime = ofGetElapsedTimef();
 
-    cout << "Recording." << endl;
+    ofLogVerbose() << "Recording." << endl;
 }
 
 void ofxVideoRecorder::setPaused(bool bPause)
@@ -380,12 +380,12 @@ void ofxVideoRecorder::setPaused(bool bPause)
         totalRecordingDuration += recordingDuration;
 
         // Log
-        cout << "Paused." << endl;
+        ofLogVerbose() << "Paused." << endl;
     } else {
         startTime = ofGetElapsedTimef();
 
         // Log
-        cout << "Recording." << endl;
+        ofLogVerbose() << "Recording." << endl;
     }
 }
 
