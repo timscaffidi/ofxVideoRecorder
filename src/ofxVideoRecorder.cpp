@@ -66,12 +66,20 @@ void ofxVideoDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
+            
             while(b_remaining > 0)
             {
+                errno = 0;
+                
                 int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
+                
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
+                }
+                else if (b_written < 0) {
+                    cout << ofGetTimestampString("%H:%M:%S:%i") << " - ##### ERROR: WRITE TO PIPE FAILED - " << errno << endl;
+                    break;
                 }
                 else {
                     if(bClose){
