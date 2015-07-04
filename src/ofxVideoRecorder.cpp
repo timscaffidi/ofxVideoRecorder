@@ -34,7 +34,7 @@ execThread::execThread(){
 
 void execThread::setup(string command){
     execCommand = command;
-    startThread(true, false);
+    startThread(true);
 }
 
 void execThread::threadedFunction(){
@@ -51,7 +51,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
     queue = q;
     bIsWriting = false;
     bClose = false;
-    startThread(true, false);
+    startThread(true);
 }
 
 void ofxVideoDataWriterThread::threadedFunction(){
@@ -110,7 +110,7 @@ void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameSh
     fd = -1;
     queue = q;
     bIsWriting = false;
-    startThread(true, false);
+    startThread(true);
 }
 
 void ofxAudioDataWriterThread::threadedFunction(){
