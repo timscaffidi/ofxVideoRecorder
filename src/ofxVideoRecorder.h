@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include "Poco/Condition.h"
 #include <set>
 
 template <typename T>
