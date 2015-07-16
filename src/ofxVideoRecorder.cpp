@@ -34,7 +34,7 @@ execThread::execThread(){
 
 void execThread::setup(string command){
     execCommand = command;
-    startThread(true, false);
+    startThread(true);
 }
 
 void execThread::threadedFunction(){
@@ -51,7 +51,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
     queue = q;
     bIsWriting = false;
     bClose = false;
-    startThread(true, false);
+    startThread(true);
 }
 
 void ofxVideoDataWriterThread::threadedFunction(){
@@ -66,17 +66,35 @@ void ofxVideoDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
-            while(b_remaining > 0)
+            
+            while(b_remaining > 0 && isThreadRunning())
             {
+                errno = 0;
+                
                 int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
+                
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
+                    if (b_remaining != 0) {
+                        ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - b_remaining is not 0 -> " << b_written << " - " << b_remaining << " - " << b_offset << ".";
+                        //break;
+                    }
+                }
+                else if (b_written < 0) {
+                    ofLogError("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - write to PIPE failed with error -> " << errno << " - " << strerror(errno) << ".";
+                    break;
                 }
                 else {
                     if(bClose){
+                        ofLogVerbose("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - Nothing was written and bClose is TRUE.";
                         break; // quit writing so we can close the file
                     }
+                    ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - Nothing was written. Is this normal?";
+                }
+                
+                if (!isThreadRunning()) {
+                    ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
             }
             bIsWriting = false;
@@ -102,7 +120,7 @@ void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameSh
     fd = -1;
     queue = q;
     bIsWriting = false;
-    startThread(true, false);
+    startThread(true);
 }
 
 void ofxAudioDataWriterThread::threadedFunction(){
