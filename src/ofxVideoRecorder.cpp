@@ -67,7 +67,7 @@ void ofxVideoDataWriterThread::threadedFunction(){
             int b_offset = 0;
             int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
             
-            while(b_remaining > 0 || !isThreadRunning())
+            while(b_remaining > 0 && isThreadRunning())
             {
                 errno = 0;
                 
