@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int setNonblocking(int fd)
+int setNonBlocking(int fd)
 {
     int flags;
 
@@ -113,6 +113,10 @@ void ofxVideoDataWriterThread::signal(){
     condition.signal();
 }
 
+void ofxVideoDataWriterThread::setPipeNonBlocking(){
+    setNonBlocking(fd);
+}
+
 //===============================
 ofxAudioDataWriterThread::ofxAudioDataWriterThread(){};
 void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameShort *> *q){
@@ -160,6 +164,10 @@ void ofxAudioDataWriterThread::threadedFunction(){
 }
 void ofxAudioDataWriterThread::signal(){
     condition.signal();
+}
+
+void ofxAudioDataWriterThread::setPipeNonBlocking(){
+    setNonBlocking(fd);
 }
 
 //===============================
@@ -277,11 +285,9 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     ffmpegThread.setup(cmd.str()); // start ffmpeg thread, will wait for input pipes to be opened
 
     if(bRecordAudio){
-//        audioPipeFd = ::open(audioPipePath.c_str(), O_WRONLY);
         audioThread.setup(audioPipePath, &audioFrames);
     }
     if(bRecordVideo){
-//        videoPipeFd = ::open(videoPipePath.c_str(), O_WRONLY);
         videoThread.setup(videoPipePath, &frames);
     }
 
@@ -415,8 +421,8 @@ void ofxVideoRecorder::close()
 
     if(bRecordVideo && bRecordAudio) {
         //set pipes to non_blocking so we dont get stuck at the final writes
-        setNonblocking(audioPipeFd);
-        setNonblocking(videoPipeFd);
+        audioThread.setPipeNonBlocking();
+        videoThread.setPipeNonBlocking();
 
         while(frames.size() > 0 && audioFrames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.
@@ -426,7 +432,7 @@ void ofxVideoRecorder::close()
     }
     else if(bRecordVideo) {
         //set pipes to non_blocking so we dont get stuck at the final writes
-        setNonblocking(videoPipeFd);
+        videoThread.setPipeNonBlocking();
 
         while(frames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.
@@ -435,7 +441,7 @@ void ofxVideoRecorder::close()
     }
     else if(bRecordAudio) {
         //set pipes to non_blocking so we dont get stuck at the final writes
-        setNonblocking(audioPipeFd);
+        audioThread.setPipeNonBlocking();
 
         while(audioFrames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.

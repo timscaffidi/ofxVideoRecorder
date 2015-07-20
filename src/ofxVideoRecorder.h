@@ -58,6 +58,7 @@ public:
     void setup(string filePath, lockFreeQueue<ofPixels *> * q);
     void threadedFunction();
     void signal();
+    void setPipeNonBlocking();
     bool isWriting() { return bIsWriting; }
     void close() { bClose = true; stopThread(); signal(); }
 private:
@@ -78,6 +79,7 @@ public:
     void setup(string filePath, lockFreeQueue<audioFrameShort *> * q);
     void threadedFunction();
     void signal();
+    void setPipeNonBlocking();
     bool isWriting() { return bIsWriting; }
     void close() { bClose = true; stopThread(); signal();  }
 private:
