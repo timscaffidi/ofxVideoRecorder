@@ -51,6 +51,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
     queue = q;
     bIsWriting = false;
     bClose = false;
+    bNotifyError = false;
     startThread(true);
 }
 
@@ -83,6 +84,7 @@ void ofxVideoDataWriterThread::threadedFunction(){
                 }
                 else if (b_written < 0) {
                     ofLogError("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - write to PIPE failed with error -> " << errno << " - " << strerror(errno) << ".";
+                    bNotifyError = true;
                     break;
                 }
                 else {
@@ -302,9 +304,9 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     return bIsInitialized;
 }
 
-void ofxVideoRecorder::addFrame(const ofPixels &pixels)
+bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
 {
-    if (!bIsRecording || bIsPaused) return;
+    if (!bIsRecording || bIsPaused) return false;
 
     if(bIsInitialized && bRecordVideo)
     {
@@ -350,6 +352,14 @@ void ofxVideoRecorder::addFrame(const ofPixels &pixels)
         }
 
         videoThread.signal();
+        
+        if (videoThread.bNotifyError) {
+            ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
+            return false;
+        }
+        else {
+            return true;
+        }
     }
 }
 
