@@ -1,3 +1,4 @@
+
 *.bak
 *~
 *#
@@ -8,9 +9,12 @@
 *.pot
 
 # App-specific ignore patterns
+/*
+!/ofxVideoRecorderExample
+/ofxVideoRecorderExample/*
+!/ofxVideoRecorderExample/src
+!/ofxVideoRecorderExample/bin
 *.mov
-/bin/*
-!/bin/data/
 
 # ignore Mac OS X finder metadata files
 .DS_Store
@@ -19,8 +23,9 @@
 CVS/
 .svn/
 
+
 */obj/*
-*/bin/ofxVolumetricsExample*
+*/bin/ofxVideoRecorderExample*
 *.o
 
 # XCode specific files
