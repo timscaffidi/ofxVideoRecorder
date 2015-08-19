@@ -84,6 +84,7 @@ public:
     void setPipeNonBlocking();
     bool isWriting() { return bIsWriting; }
     void close() { bClose = true; stopThread(); signal();  }
+    bool bNotifyError;
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;

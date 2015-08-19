@@ -126,6 +126,7 @@ void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameSh
     fd = -1;
     queue = q;
     bIsWriting = false;
+    bNotifyError = false;
     startThread(true);
 }
 
@@ -141,16 +142,26 @@ void ofxAudioDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->size*sizeof(short);
-            while(b_remaining > 0){
+            while(b_remaining > 0 && isThreadRunning()){
                 int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining);
+                
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
+                }
+                else if (b_written < 0) {
+                    ofLogError("ofxAudioDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - write to PIPE failed with error -> " << errno << " - " << strerror(errno) << ".";
+                    bNotifyError = true;
+                    break;
                 }
                 else {
                     if(bClose){
                         break; // quit writing so we can close the file
                     }
+                }
+                
+                if (!isThreadRunning()) {
+                    ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
             }
             bIsWriting = false;
