@@ -110,6 +110,9 @@ public:
     void start();
     void close();
     void setPaused(bool bPause);
+    
+    bool hasVideoError();
+    bool hasAudioError();
 
     void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     void setVideoCodec(string codec) { videoCodec = codec; }

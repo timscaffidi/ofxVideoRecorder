@@ -43,6 +43,15 @@ void ofApp::update(){
             ofLogWarning("This frame was not added!");
         }
     }
+    
+    // Check if the video recorder encountered any error while writing video frame or audio smaples.
+    if (vidRecorder.hasVideoError()) {
+        ofLogWarning("The video recorder failed to write some frames!");
+    }
+    
+    if (vidRecorder.hasAudioError()) {
+        ofLogWarning("The video recorder failed to write some audio samples!");
+    }
 }
 
 //--------------------------------------------------------------

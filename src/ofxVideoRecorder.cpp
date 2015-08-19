@@ -363,14 +363,6 @@ bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
         }
 
         videoThread.signal();
-        
-        if (videoThread.bNotifyError) {
-            ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
-            return false;
-        }
-        else {
-            return true;
-        }
     }
 }
 
@@ -489,6 +481,28 @@ void ofxVideoRecorder::close()
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
 
+}
+
+bool ofxVideoRecorder::hasVideoError()
+{
+    if (videoThread.bNotifyError) {
+        ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+
+bool ofxVideoRecorder::hasAudioError()
+{
+    if (audioThread.bNotifyError) {
+        ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
+        return false;
+    }
+    else {
+        return true;
+    }
 }
 
 float ofxVideoRecorder::systemClock()
