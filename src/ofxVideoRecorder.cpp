@@ -161,7 +161,7 @@ void ofxAudioDataWriterThread::threadedFunction(){
                 }
                 
                 if (!isThreadRunning()) {
-                    ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
+                    ofLogWarning("ofxAudioDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
             }
             bIsWriting = false;
@@ -485,24 +485,12 @@ void ofxVideoRecorder::close()
 
 bool ofxVideoRecorder::hasVideoError()
 {
-    if (videoThread.bNotifyError) {
-        ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
-        return false;
-    }
-    else {
-        return true;
-    }
+    return videoThread.bNotifyError;
 }
 
 bool ofxVideoRecorder::hasAudioError()
 {
-    if (audioThread.bNotifyError) {
-        ofLogError("ofxVideoRecorder::addFrame()") << ofGetTimestampString("%H:%M:%S:%i") << " - Notify video error!.";
-        return false;
-    }
-    else {
-        return true;
-    }
+    return audioThread.bNotifyError;
 }
 
 float ofxVideoRecorder::systemClock()
