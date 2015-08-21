@@ -51,6 +51,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
     queue = q;
     bIsWriting = false;
     bClose = false;
+    bNotifyError = false;
     startThread(true);
 }
 
@@ -83,6 +84,7 @@ void ofxVideoDataWriterThread::threadedFunction(){
                 }
                 else if (b_written < 0) {
                     ofLogError("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - write to PIPE failed with error -> " << errno << " - " << strerror(errno) << ".";
+                    bNotifyError = true;
                     break;
                 }
                 else {
@@ -124,6 +126,7 @@ void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameSh
     fd = -1;
     queue = q;
     bIsWriting = false;
+    bNotifyError = false;
     startThread(true);
 }
 
@@ -139,16 +142,26 @@ void ofxAudioDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->size*sizeof(short);
-            while(b_remaining > 0){
+            while(b_remaining > 0 && isThreadRunning()){
                 int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining);
+                
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
+                }
+                else if (b_written < 0) {
+                    ofLogError("ofxAudioDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - write to PIPE failed with error -> " << errno << " - " << strerror(errno) << ".";
+                    bNotifyError = true;
+                    break;
                 }
                 else {
                     if(bClose){
                         break; // quit writing so we can close the file
                     }
+                }
+                
+                if (!isThreadRunning()) {
+                    ofLogWarning("ofxAudioDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
             }
             bIsWriting = false;
@@ -302,9 +315,9 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     return bIsInitialized;
 }
 
-void ofxVideoRecorder::addFrame(const ofPixels &pixels)
+bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
 {
-    if (!bIsRecording || bIsPaused) return;
+    if (!bIsRecording || bIsPaused) return false;
 
     if(bIsInitialized && bRecordVideo)
     {
@@ -468,6 +481,16 @@ void ofxVideoRecorder::close()
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
 
+}
+
+bool ofxVideoRecorder::hasVideoError()
+{
+    return videoThread.bNotifyError;
+}
+
+bool ofxVideoRecorder::hasAudioError()
+{
+    return audioThread.bNotifyError;
 }
 
 float ofxVideoRecorder::systemClock()
