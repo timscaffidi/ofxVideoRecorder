@@ -10,8 +10,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-int setNonBlocking(int fd)
-{
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+int setNonBlocking(int fd){
     int flags;
 
     /* If they have O_NONBLOCK, use the Posix way to do it */
@@ -27,24 +28,31 @@ int setNonBlocking(int fd)
 #endif
 }
 
-//===============================
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 execThread::execThread(){
     execCommand = "";
 }
 
+//--------------------------------------------------------------
 void execThread::setup(string command){
     execCommand = command;
     startThread(true);
 }
 
+//--------------------------------------------------------------
 void execThread::threadedFunction(){
     if(isThreadRunning()){
         system(execCommand.c_str());
     }
 }
 
-//===============================
-ofxVideoDataWriterThread::ofxVideoDataWriterThread(){};
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+ofxVideoDataWriterThread::ofxVideoDataWriterThread(){
+}
+
+//--------------------------------------------------------------
 void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> * q){
     this->filePath = filePath;
     fd = -1;
@@ -55,6 +63,7 @@ void ofxVideoDataWriterThread::setup(string filePath, lockFreeQueue<ofPixels *> 
     startThread(true);
 }
 
+//--------------------------------------------------------------
 void ofxVideoDataWriterThread::threadedFunction(){
     if(fd == -1){
         fd = ::open(filePath.c_str(), O_WRONLY);
@@ -111,16 +120,22 @@ void ofxVideoDataWriterThread::threadedFunction(){
     ::close(fd);
 }
 
+//--------------------------------------------------------------
 void ofxVideoDataWriterThread::signal(){
     condition.signal();
 }
 
+//--------------------------------------------------------------
 void ofxVideoDataWriterThread::setPipeNonBlocking(){
     setNonBlocking(fd);
 }
 
-//===============================
-ofxAudioDataWriterThread::ofxAudioDataWriterThread(){};
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+ofxAudioDataWriterThread::ofxAudioDataWriterThread(){
+}
+
+//--------------------------------------------------------------
 void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameShort *> *q){
     this->filePath = filePath;
     fd = -1;
@@ -130,6 +145,7 @@ void ofxAudioDataWriterThread::setup(string filePath, lockFreeQueue<audioFrameSh
     startThread(true);
 }
 
+//--------------------------------------------------------------
 void ofxAudioDataWriterThread::threadedFunction(){
     if(fd == -1){
         fd = ::open(filePath.c_str(), O_WRONLY);
@@ -175,17 +191,20 @@ void ofxAudioDataWriterThread::threadedFunction(){
 
     ::close(fd);
 }
+
+//--------------------------------------------------------------
 void ofxAudioDataWriterThread::signal(){
     condition.signal();
 }
 
+//--------------------------------------------------------------
 void ofxAudioDataWriterThread::setPipeNonBlocking(){
     setNonBlocking(fd);
 }
 
-//===============================
-ofxVideoRecorder::ofxVideoRecorder()
-{
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+ofxVideoRecorder::ofxVideoRecorder(){
     bIsInitialized = false;
     ffmpegLocation = "ffmpeg";
     videoCodec = "mpeg4";
@@ -195,8 +214,8 @@ ofxVideoRecorder::ofxVideoRecorder()
     pixelFormat = "rgb24";
 }
 
-bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool sysClockSync, bool silent)
-{
+//--------------------------------------------------------------
+bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool sysClockSync, bool silent){
     if(bIsInitialized)
     {
         close();
@@ -218,12 +237,13 @@ bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRa
     return setupCustomOutput(w, h, fps, sampleRate, channels, outputSettings.str(), sysClockSync, silent);
 }
 
+//--------------------------------------------------------------
 bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync, bool silent){
     return setupCustomOutput(w, h, fps, 0, 0, outputString, sysClockSync, silent);
 }
 
-bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync, bool silent)
-{
+//--------------------------------------------------------------
+bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync, bool silent){
     if(bIsInitialized)
     {
         close();
@@ -315,8 +335,8 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     return bIsInitialized;
 }
 
-bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
-{
+//--------------------------------------------------------------
+bool ofxVideoRecorder::addFrame(const ofPixels &pixels){
     if (!bIsRecording || bIsPaused) return false;
 
     if(bIsInitialized && bRecordVideo)
@@ -366,6 +386,7 @@ bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
     }
 }
 
+//--------------------------------------------------------------
 void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numChannels){
     if (!bIsRecording || bIsPaused) return;
 
@@ -384,8 +405,8 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
     }
 }
 
-void ofxVideoRecorder::start()
-{
+//--------------------------------------------------------------
+void ofxVideoRecorder::start(){
     if(!bIsInitialized) return;
 
     if (bIsRecording) {
@@ -401,8 +422,8 @@ void ofxVideoRecorder::start()
     ofLogVerbose() << "Recording." << endl;
 }
 
-void ofxVideoRecorder::setPaused(bool bPause)
-{
+//--------------------------------------------------------------
+void ofxVideoRecorder::setPaused(bool bPause){
     if(!bIsInitialized) return;
 
     if (!bIsRecording || bIsPaused == bPause) {
@@ -426,8 +447,8 @@ void ofxVideoRecorder::setPaused(bool bPause)
     }
 }
 
-void ofxVideoRecorder::close()
-{
+//--------------------------------------------------------------
+void ofxVideoRecorder::close(){
     if(!bIsInitialized) return;
 
     bIsRecording = false;
@@ -483,24 +504,26 @@ void ofxVideoRecorder::close()
 
 }
 
-bool ofxVideoRecorder::hasVideoError()
-{
+//--------------------------------------------------------------
+bool ofxVideoRecorder::hasVideoError(){
     return videoThread.bNotifyError;
 }
 
-bool ofxVideoRecorder::hasAudioError()
-{
+//--------------------------------------------------------------
+bool ofxVideoRecorder::hasAudioError(){
     return audioThread.bNotifyError;
 }
 
-float ofxVideoRecorder::systemClock()
-{
+//--------------------------------------------------------------
+float ofxVideoRecorder::systemClock(){
     recordingDuration = ofGetElapsedTimef() - startTime;
     return totalRecordingDuration + recordingDuration;
 }
 
+//--------------------------------------------------------------
 set<int> ofxVideoRecorder::openPipes;
 
+//--------------------------------------------------------------
 int ofxVideoRecorder::requestPipeNumber(){
     int n = 0;
     while (openPipes.find(n) != openPipes.end()) {
@@ -510,6 +533,7 @@ int ofxVideoRecorder::requestPipeNumber(){
     return n;
 }
 
+//--------------------------------------------------------------
 void ofxVideoRecorder::retirePipeNumber(int num){
     if(!openPipes.erase(num)){
         ofLogNotice() << "ofxVideoRecorder::retirePipeNumber(): trying to retire a pipe number that is not being tracked: " << num << endl;

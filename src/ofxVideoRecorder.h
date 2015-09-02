@@ -4,6 +4,8 @@
 #include "Poco/Condition.h"
 #include <set>
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 template <typename T>
 struct lockFreeQueue {
     lockFreeQueue(){
@@ -52,6 +54,8 @@ struct audioFrameShort {
     int size;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxVideoDataWriterThread : public ofThread {
 public:
     ofxVideoDataWriterThread();
@@ -74,6 +78,8 @@ private:
     bool bClose;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxAudioDataWriterThread : public ofThread {
 public:
     ofxAudioDataWriterThread();
@@ -96,6 +102,8 @@ private:
     bool bClose;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxVideoRecorder
 {
 public:
