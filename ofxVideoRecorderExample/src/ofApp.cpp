@@ -38,7 +38,7 @@ void ofApp::exit() {
 void ofApp::update(){
     vidGrabber.update();
     if(vidGrabber.isFrameNew() && bRecording){
-        bool success = vidRecorder.addFrame(vidGrabber.getPixelsRef());
+        bool success = vidRecorder.addFrame(vidGrabber.getPixels());
         if (!success) {
             ofLogWarning("This frame was not added!");
         }
@@ -67,13 +67,13 @@ void ofApp::draw(){
     << (bRecording?"close current video file: c":"") << endl;
 
     ofSetColor(0,0,0,100);
-    ofRect(0, 0, 260, 75);
+    ofDrawRectangle(0, 0, 260, 75);
     ofSetColor(255, 255, 255);
     ofDrawBitmapString(ss.str(),15,15);
 
     if(bRecording){
     ofSetColor(255, 0, 0);
-    ofCircle(ofGetWidth() - 20, 20, 5);
+    ofDrawCircle(ofGetWidth() - 20, 20, 5);
     }
 }
 

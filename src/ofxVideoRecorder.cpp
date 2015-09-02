@@ -72,7 +72,7 @@ void ofxVideoDataWriterThread::threadedFunction(){
             {
                 errno = 0;
                 
-                int b_written = ::write(fd, ((char *)frame->getPixels())+b_offset, b_remaining);
+                int b_written = ::write(fd, ((char *)frame->getData())+b_offset, b_remaining);
                 
                 if(b_written > 0){
                     b_remaining -= b_written;
