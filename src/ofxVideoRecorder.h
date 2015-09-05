@@ -4,6 +4,8 @@
 #include "Poco/Condition.h"
 #include <set>
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 template <typename T>
 struct lockFreeQueue {
     lockFreeQueue(){
@@ -52,6 +54,8 @@ struct audioFrameShort {
     int size;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxVideoDataWriterThread : public ofThread {
 public:
     ofxVideoDataWriterThread();
@@ -62,6 +66,7 @@ public:
     void setPipeNonBlocking();
     bool isWriting() { return bIsWriting; }
     void close() { bClose = true; stopThread(); signal(); }
+    bool bNotifyError;
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
@@ -73,6 +78,8 @@ private:
     bool bClose;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxAudioDataWriterThread : public ofThread {
 public:
     ofxAudioDataWriterThread();
@@ -83,6 +90,7 @@ public:
     void setPipeNonBlocking();
     bool isWriting() { return bIsWriting; }
     void close() { bClose = true; stopThread(); signal();  }
+    bool bNotifyError;
 private:
     ofMutex conditionMutex;
     Poco::Condition condition;
@@ -94,6 +102,8 @@ private:
     bool bClose;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxVideoRecorder
 {
 public:
@@ -102,12 +112,15 @@ public:
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync=false, bool silent=false);
     void setQuality(ofImageQualityType q);
-    void addFrame(const ofPixels &pixels);
+    bool addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
 
     void start();
     void close();
     void setPaused(bool bPause);
+    
+    bool hasVideoError();
+    bool hasAudioError();
 
     void setFfmpegLocation(string loc) { ffmpegLocation = loc; }
     void setVideoCodec(string codec) { videoCodec = codec; }
