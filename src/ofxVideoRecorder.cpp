@@ -364,6 +364,7 @@ bool ofxVideoRecorder::addFrame(const ofPixels &pixels)
 
         videoThread.signal();
     }
+    return true;
 }
 
 void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numChannels){
