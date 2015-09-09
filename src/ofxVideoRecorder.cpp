@@ -383,7 +383,11 @@ bool ofxVideoRecorder::addFrame(const ofPixels &pixels){
         }
 
         videoThread.signal();
+        
+        return true;
     }
+    
+    return false;
 }
 
 //--------------------------------------------------------------
