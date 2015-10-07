@@ -470,12 +470,16 @@ void ofxVideoRecorder::close(){
     }
     else if(bRecordVideo) {
         //set pipes to non_blocking so we dont get stuck at the final writes
-        videoThread.setPipeNonBlocking();
-
-        while(frames.size() > 0) {
-            // if there are frames in the queue or the thread is writing, signal them until the work is done.
-            videoThread.signal();
+        //videoThread.setPipeNonBlocking();
+        
+        if (frames.size() > 0) {
+            startThread();
+            return;
         }
+        else {
+            //cout << "ofxVideoRecorder :: we are good to go!" << endl;
+        }
+
     }
     else if(bRecordAudio) {
         //set pipes to non_blocking so we dont get stuck at the final writes
@@ -487,25 +491,48 @@ void ofxVideoRecorder::close(){
         }
     }
 
+    videoComplete();
+}
+
+//--------------------------------------------------------------
+void ofxVideoRecorder::threadedFunction()
+{
+    while(frames.size() > 0) {
+        // if there are frames in the queue or the thread is writing, signal them until the work is done.
+        videoThread.signal();
+    }
+    
+    waitForThread();
+    
+    videoComplete();
+}
+
+//--------------------------------------------------------------
+void ofxVideoRecorder::videoComplete()
+{
     //at this point all data that ffmpeg wants should have been consumed
     // one of the threads may still be trying to write a frame,
     // but once close() gets called they will exit the non_blocking write loop
     // and hopefully close successfully
-
+    
     bIsInitialized = false;
-
+    
     if (bRecordVideo) {
         videoThread.close();
     }
     if (bRecordAudio) {
         audioThread.close();
     }
-
+    
     retirePipeNumber(pipeNumber);
-
+    
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
-
+    
+    // Notify the listeners.
+    ofxVideoRecorderVideoCompleteEventArgs args;
+    args.fileName = fileName;
+    ofNotifyEvent(videoCompleteEvent, args);
 }
 
 //--------------------------------------------------------------

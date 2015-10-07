@@ -102,12 +102,27 @@ private:
     bool bClose;
 };
 
+
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-class ofxVideoRecorder
+class ofxVideoRecorderVideoCompleteEventArgs
+: public ofEventArgs
+{
+public:
+    string fileName;
+};
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+class ofxVideoRecorder  : public ofThread
 {
 public:
     ofxVideoRecorder();
+    
+    void threadedFunction();
+    
+    ofEvent<ofxVideoRecorderVideoCompleteEventArgs> videoCompleteEvent;
+    
     bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync=false, bool silent=false);
@@ -184,4 +199,6 @@ private:
     static set<int> openPipes;
     static int requestPipeNumber();
     static void retirePipeNumber(int num);
+    
+    void videoComplete();
 };
