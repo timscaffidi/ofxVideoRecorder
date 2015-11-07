@@ -121,7 +121,7 @@ public:
     
     void threadedFunction();
     
-    ofEvent<ofxVideoRecorderOutputFileCompleteEventArgs> outupFileCompleteEvent;
+    ofEvent<ofxVideoRecorderOutputFileCompleteEventArgs> outputFileCompleteEvent;
     
     bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);

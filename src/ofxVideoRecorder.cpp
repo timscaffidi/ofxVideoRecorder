@@ -549,7 +549,7 @@ void ofxVideoRecorder::outputFileComplete()
     // Notify the listeners.
     ofxVideoRecorderOutputFileCompleteEventArgs args;
     args.fileName = fileName;
-    ofNotifyEvent(outupFileCompleteEvent, args);
+    ofNotifyEvent(outputFileCompleteEvent, args);
 }
 
 //--------------------------------------------------------------

@@ -21,7 +21,7 @@ void ofApp::setup(){
     vidRecorder.setAudioCodec("mp3");
     vidRecorder.setAudioBitrate("192k");
     
-    ofAddListener(vidRecorder.outupFileCompleteEvent, this, &ofApp::recordingComplete);
+    ofAddListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
 
 //    soundStream.listDevices();
 //    soundStream.setDeviceID(11);
@@ -33,7 +33,7 @@ void ofApp::setup(){
 }
 
 void ofApp::exit(){
-    ofRemoveListener(vidRecorder.outupFileCompleteEvent, this, &ofApp::recordingComplete);
+    ofRemoveListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
     vidRecorder.close();
 }
 
