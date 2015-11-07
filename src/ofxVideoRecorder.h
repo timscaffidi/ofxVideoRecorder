@@ -105,7 +105,7 @@ private:
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
-class ofxVideoRecorderVideoCompleteEventArgs
+class ofxVideoRecorderOutputFileCompleteEventArgs
 : public ofEventArgs
 {
 public:
@@ -121,7 +121,7 @@ public:
     
     void threadedFunction();
     
-    ofEvent<ofxVideoRecorderVideoCompleteEventArgs> videoCompleteEvent;
+    ofEvent<ofxVideoRecorderOutputFileCompleteEventArgs> outupFileCompleteEvent;
     
     bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
@@ -200,5 +200,5 @@ private:
     static int requestPipeNumber();
     static void retirePipeNumber(int num);
     
-    void videoComplete();
+    void outputFileComplete();
 };
