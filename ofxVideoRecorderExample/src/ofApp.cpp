@@ -32,6 +32,7 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
 }
 
+//--------------------------------------------------------------
 void ofApp::exit(){
     ofRemoveListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
     vidRecorder.close();
@@ -80,11 +81,13 @@ void ofApp::draw(){
     }
 }
 
+//--------------------------------------------------------------
 void ofApp::audioIn(float *input, int bufferSize, int nChannels){
     if(bRecording)
         vidRecorder.addAudioSamples(input, bufferSize, nChannels);
 }
 
+//--------------------------------------------------------------
 void ofApp::recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args){
     cout << "The recoded video file is now complete." << endl;
 }
