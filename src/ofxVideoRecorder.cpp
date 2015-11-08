@@ -459,9 +459,47 @@ void ofxVideoRecorder::close(){
 
     if(bRecordVideo && bRecordAudio) {
         //set pipes to non_blocking so we dont get stuck at the final writes
-        audioThread.setPipeNonBlocking();
-        videoThread.setPipeNonBlocking();
+        //audioThread.setPipeNonBlocking();
+        //videoThread.setPipeNonBlocking();
 
+        if (frames.size() > 0 && audioFrames.size() > 0) {
+            // if there are frames in the queue start a thread to finalize the output file without blocking the app.
+            startThread();
+            return;
+        }
+    }
+    else if(bRecordVideo) {
+        //set pipes to non_blocking so we dont get stuck at the final writes
+        //videoThread.setPipeNonBlocking();
+        
+        if (frames.size() > 0) {
+            // if there are frames in the queue start a thread to finalize the output file without blocking the app.
+            startThread();
+            return;
+        }
+        else {
+            //cout << "ofxVideoRecorder :: we are good to go!" << endl;
+        }
+
+    }
+    else if(bRecordAudio) {
+        //set pipes to non_blocking so we dont get stuck at the final writes
+        //audioThread.setPipeNonBlocking();
+
+        if (audioFrames.size() > 0) {
+            // if there are frames in the queue start a thread to finalize the output file without blocking the app.
+            startThread();
+            return;
+        }
+    }
+
+    outputFileComplete();
+}
+
+//--------------------------------------------------------------
+void ofxVideoRecorder::threadedFunction()
+{
+    if(bRecordVideo && bRecordAudio) {
         while(frames.size() > 0 && audioFrames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.
             videoThread.signal();
@@ -469,43 +507,49 @@ void ofxVideoRecorder::close(){
         }
     }
     else if(bRecordVideo) {
-        //set pipes to non_blocking so we dont get stuck at the final writes
-        videoThread.setPipeNonBlocking();
-
         while(frames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.
             videoThread.signal();
         }
     }
     else if(bRecordAudio) {
-        //set pipes to non_blocking so we dont get stuck at the final writes
-        audioThread.setPipeNonBlocking();
-
         while(audioFrames.size() > 0) {
             // if there are frames in the queue or the thread is writing, signal them until the work is done.
             audioThread.signal();
         }
     }
+    
+    waitForThread();
+    
+    outputFileComplete();
+}
 
+//--------------------------------------------------------------
+void ofxVideoRecorder::outputFileComplete()
+{
     //at this point all data that ffmpeg wants should have been consumed
     // one of the threads may still be trying to write a frame,
     // but once close() gets called they will exit the non_blocking write loop
     // and hopefully close successfully
-
+    
     bIsInitialized = false;
-
+    
     if (bRecordVideo) {
         videoThread.close();
     }
     if (bRecordAudio) {
         audioThread.close();
     }
-
+    
     retirePipeNumber(pipeNumber);
-
+    
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
-
+    
+    // Notify the listeners.
+    ofxVideoRecorderOutputFileCompleteEventArgs args;
+    args.fileName = fileName;
+    ofNotifyEvent(outputFileCompleteEvent, args);
 }
 
 //--------------------------------------------------------------
