@@ -20,6 +20,8 @@ void ofApp::setup(){
     vidRecorder.setVideoBitrate("800k");
     vidRecorder.setAudioCodec("mp3");
     vidRecorder.setAudioBitrate("192k");
+    
+    ofAddListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
 
 //    soundStream.listDevices();
 //    soundStream.setDeviceID(11);
@@ -30,7 +32,9 @@ void ofApp::setup(){
     ofEnableAlphaBlending();
 }
 
-void ofApp::exit() {
+//--------------------------------------------------------------
+void ofApp::exit(){
+    ofRemoveListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
     vidRecorder.close();
 }
 
@@ -38,7 +42,7 @@ void ofApp::exit() {
 void ofApp::update(){
     vidGrabber.update();
     if(vidGrabber.isFrameNew() && bRecording){
-        bool success = vidRecorder.addFrame(vidGrabber.getPixelsRef());
+        bool success = vidRecorder.addFrame(vidGrabber.getPixels());
         if (!success) {
             ofLogWarning("This frame was not added!");
         }
@@ -67,19 +71,25 @@ void ofApp::draw(){
     << (bRecording?"close current video file: c":"") << endl;
 
     ofSetColor(0,0,0,100);
-    ofRect(0, 0, 260, 75);
+    ofDrawRectangle(0, 0, 260, 75);
     ofSetColor(255, 255, 255);
     ofDrawBitmapString(ss.str(),15,15);
 
     if(bRecording){
     ofSetColor(255, 0, 0);
-    ofCircle(ofGetWidth() - 20, 20, 5);
+    ofDrawCircle(ofGetWidth() - 20, 20, 5);
     }
 }
 
+//--------------------------------------------------------------
 void ofApp::audioIn(float *input, int bufferSize, int nChannels){
     if(bRecording)
         vidRecorder.addAudioSamples(input, bufferSize, nChannels);
+}
+
+//--------------------------------------------------------------
+void ofApp::recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args){
+    cout << "The recoded video file is now complete." << endl;
 }
 
 //--------------------------------------------------------------

@@ -4,6 +4,8 @@
 #include "Poco/Condition.h"
 #include <set>
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 template <typename T>
 struct lockFreeQueue {
     lockFreeQueue(){
@@ -52,6 +54,8 @@ struct audioFrameShort {
     int size;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxVideoDataWriterThread : public ofThread {
 public:
     ofxVideoDataWriterThread();
@@ -74,6 +78,8 @@ private:
     bool bClose;
 };
 
+//--------------------------------------------------------------
+//--------------------------------------------------------------
 class ofxAudioDataWriterThread : public ofThread {
 public:
     ofxAudioDataWriterThread();
@@ -96,10 +102,27 @@ private:
     bool bClose;
 };
 
-class ofxVideoRecorder
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+class ofxVideoRecorderOutputFileCompleteEventArgs
+: public ofEventArgs
+{
+public:
+    string fileName;
+};
+
+//--------------------------------------------------------------
+//--------------------------------------------------------------
+class ofxVideoRecorder  : public ofThread
 {
 public:
     ofxVideoRecorder();
+    
+    void threadedFunction();
+    
+    ofEvent<ofxVideoRecorderOutputFileCompleteEventArgs> outputFileCompleteEvent;
+    
     bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync=false, bool silent=false);
@@ -176,4 +199,6 @@ private:
     static set<int> openPipes;
     static int requestPipeNumber();
     static void retirePipeNumber(int num);
+    
+    void outputFileComplete();
 };
