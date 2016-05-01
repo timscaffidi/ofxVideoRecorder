@@ -118,11 +118,11 @@ class ofxVideoRecorder  : public ofThread
 {
 public:
     ofxVideoRecorder();
-    
+
     void threadedFunction();
-    
+
     ofEvent<ofxVideoRecorderOutputFileCompleteEventArgs> outputFileCompleteEvent;
-    
+
     bool setup(string fname, int w, int h, float fps, int sampleRate=0, int channels=0, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, string outputString, bool sysClockSync=false, bool silent=false);
     bool setupCustomOutput(int w, int h, float fps, int sampleRate, int channels, string outputString, bool sysClockSync=false, bool silent=false);
@@ -133,7 +133,7 @@ public:
     void start();
     void close();
     void setPaused(bool bPause);
-    
+
     bool hasVideoError();
     bool hasAudioError();
 
@@ -199,6 +199,6 @@ private:
     static set<int> openPipes;
     static int requestPipeNumber();
     static void retirePipeNumber(int num);
-    
+
     void outputFileComplete();
 };

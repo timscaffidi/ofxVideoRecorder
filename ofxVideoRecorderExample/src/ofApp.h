@@ -4,13 +4,13 @@
 #include "ofxVideoRecorder.h"
 
 class ofApp : public ofBaseApp{
-    
+
 public:
     void setup();
     void update();
     void draw();
     void exit();
-    
+
     void keyPressed  (int key);
     void keyReleased(int key);
     void mouseMoved(int x, int y );
@@ -21,7 +21,7 @@ public:
     void dragEvent(ofDragInfo dragInfo);
     void gotMessage(ofMessage msg);
     void audioIn(float * input, int bufferSize, int nChannels);
-    
+
     ofVideoGrabber      vidGrabber;
     ofxVideoRecorder    vidRecorder;
     ofSoundStream       soundStream;
@@ -30,9 +30,9 @@ public:
     int channels;
     string fileName;
     string fileExt;
-    
+
     void recordingComplete(ofxVideoRecorderOutputFileCompleteEventArgs& args);
-    
+
     ofFbo recordFbo;
     ofPixels recordPixels;
 };

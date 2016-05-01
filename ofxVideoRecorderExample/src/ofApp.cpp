@@ -16,11 +16,11 @@ void ofApp::setup(){
 
     // override the default codecs if you like
     // run 'ffmpeg -codecs' to find out what your implementation supports (or -formats on some older versions)
-    vidRecorder.setVideoCodec("mpeg4"); 
+    vidRecorder.setVideoCodec("mpeg4");
     vidRecorder.setVideoBitrate("800k");
     vidRecorder.setAudioCodec("mp3");
     vidRecorder.setAudioBitrate("192k");
-    
+
     ofAddListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
 
 //    soundStream.listDevices();
@@ -47,12 +47,12 @@ void ofApp::update(){
             ofLogWarning("This frame was not added!");
         }
     }
-    
+
     // Check if the video recorder encountered any error while writing video frame or audio smaples.
     if (vidRecorder.hasVideoError()) {
         ofLogWarning("The video recorder failed to write some frames!");
     }
-    
+
     if (vidRecorder.hasAudioError()) {
         ofLogWarning("The video recorder failed to write some audio samples!");
     }
@@ -106,7 +106,7 @@ void ofApp::keyReleased(int key){
 //          vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, vidGrabber.getWidth(), vidGrabber.getHeight(), 30); // no audio
 //            vidRecorder.setup(fileName+ofGetTimestampString()+fileExt, 0,0,0, sampleRate, channels); // no video
 //          vidRecorder.setupCustomOutput(vidGrabber.getWidth(), vidGrabber.getHeight(), 30, sampleRate, channels, "-vcodec mpeg4 -b 1600k -acodec mp2 -ab 128k -f mpegts udp://localhost:1234"); // for custom ffmpeg output string (streaming, etc)
-            
+
             // Start recording
             vidRecorder.start();
         }

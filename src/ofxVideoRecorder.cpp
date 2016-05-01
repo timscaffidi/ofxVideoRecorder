@@ -76,13 +76,13 @@ void ofxVideoDataWriterThread::threadedFunction(){
             bIsWriting = true;
             int b_offset = 0;
             int b_remaining = frame->getWidth()*frame->getHeight()*frame->getBytesPerPixel();
-            
+
             while(b_remaining > 0 && isThreadRunning())
             {
                 errno = 0;
-                
+
                 int b_written = ::write(fd, ((char *)frame->getData())+b_offset, b_remaining);
-                
+
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
@@ -103,7 +103,7 @@ void ofxVideoDataWriterThread::threadedFunction(){
                     }
                     ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - Nothing was written. Is this normal?";
                 }
-                
+
                 if (!isThreadRunning()) {
                     ofLogWarning("ofxVideoDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
@@ -160,7 +160,7 @@ void ofxAudioDataWriterThread::threadedFunction(){
             int b_remaining = frame->size*sizeof(short);
             while(b_remaining > 0 && isThreadRunning()){
                 int b_written = ::write(fd, ((char *)frame->data)+b_offset, b_remaining);
-                
+
                 if(b_written > 0){
                     b_remaining -= b_written;
                     b_offset += b_written;
@@ -175,7 +175,7 @@ void ofxAudioDataWriterThread::threadedFunction(){
                         break; // quit writing so we can close the file
                     }
                 }
-                
+
                 if (!isThreadRunning()) {
                     ofLogWarning("ofxAudioDataWriterThread") << ofGetTimestampString("%H:%M:%S:%i") << " - The thread is not running anymore let's get out of here!";
                 }
@@ -383,10 +383,10 @@ bool ofxVideoRecorder::addFrame(const ofPixels &pixels){
         }
 
         videoThread.signal();
-        
+
         return true;
     }
-    
+
     return false;
 }
 
@@ -471,7 +471,7 @@ void ofxVideoRecorder::close(){
     else if(bRecordVideo) {
         //set pipes to non_blocking so we dont get stuck at the final writes
         //videoThread.setPipeNonBlocking();
-        
+
         if (frames.size() > 0) {
             // if there are frames in the queue start a thread to finalize the output file without blocking the app.
             startThread();
@@ -518,9 +518,9 @@ void ofxVideoRecorder::threadedFunction()
             audioThread.signal();
         }
     }
-    
+
     waitForThread();
-    
+
     outputFileComplete();
 }
 
@@ -531,21 +531,21 @@ void ofxVideoRecorder::outputFileComplete()
     // one of the threads may still be trying to write a frame,
     // but once close() gets called they will exit the non_blocking write loop
     // and hopefully close successfully
-    
+
     bIsInitialized = false;
-    
+
     if (bRecordVideo) {
         videoThread.close();
     }
     if (bRecordAudio) {
         audioThread.close();
     }
-    
+
     retirePipeNumber(pipeNumber);
-    
+
     ffmpegThread.waitForThread();
     // TODO: kill ffmpeg process if its taking too long to close for whatever reason.
-    
+
     // Notify the listeners.
     ofxVideoRecorderOutputFileCompleteEventArgs args;
     args.fileName = fileName;
