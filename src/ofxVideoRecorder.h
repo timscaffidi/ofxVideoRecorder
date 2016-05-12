@@ -30,8 +30,8 @@ struct lockFreeQueue {
         return false;
     }
     int size() { return distance(iHead,iTail)-1; }
-    typename std::list<T>::iterator getHead() {return iHead; }
-    typename std::list<T>::iterator getTail() {return iTail; }
+    typename std::list<T>::iterator getHead() { return iHead; }
+    typename std::list<T>::iterator getTail() { return iTail; }
 
 
 private:
@@ -45,8 +45,10 @@ public:
     execThread();
     void setup(string command);
     void threadedFunction();
+    bool isInitialized() { return initialized; }
 private:
     string execCommand;
+    bool initialized;
 };
 
 struct audioFrameShort {
