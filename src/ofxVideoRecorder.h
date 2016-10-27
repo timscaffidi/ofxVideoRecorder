@@ -148,6 +148,9 @@ public:
     void setPixelFormat( string pixelF){ //rgb24 || gray, default is rgb24
         pixelFormat = pixelF;
     };
+    void setOutputPixelFormat(string pixelF) {
+        outputPixelFormat = pixelF;
+    }
 
     unsigned long long getNumVideoFramesRecorded() { return videoFramesRecorded; }
     unsigned long long getNumAudioSamplesRecorded() { return audioSamplesRecorded; }
@@ -169,7 +172,7 @@ private:
     string moviePath;
     string videoPipePath, audioPipePath;
     string ffmpegLocation;
-    string videoCodec, audioCodec, videoBitrate, audioBitrate, pixelFormat;
+    string videoCodec, audioCodec, videoBitrate, audioBitrate, pixelFormat, outputPixelFormat;
     int width, height, sampleRate, audioChannels;
     float frameRate;
 
