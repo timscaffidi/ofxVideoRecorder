@@ -228,6 +228,7 @@ ofxVideoRecorder::ofxVideoRecorder(){
     videoBitrate = "2000k";
     audioBitrate = "128k";
     pixelFormat = "rgb24";
+    outputPixelFormat = "";
 }
 
 //--------------------------------------------------------------
@@ -323,6 +324,8 @@ bool ofxVideoRecorder::setupCustomOutput(int w, int h, float fps, int sampleRate
     }
     if(bRecordVideo){ // video input options and file
         cmd << " -r "<< fps << " -s " << w << "x" << h << " -f rawvideo -pix_fmt " << pixelFormat <<" -i " << videoPipePath << " -r " << fps;
+        if (outputPixelFormat.length() > 0)
+            cmd << " -pix_fmt " << outputPixelFormat;
     }
     else { // no video stream
         cmd << " -vn";
