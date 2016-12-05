@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "Poco/Condition.h"
 #include <set>
+#include <condition_variable>
 
 //--------------------------------------------------------------
 //--------------------------------------------------------------
@@ -70,8 +71,8 @@ public:
     void close() { bClose = true; stopThread(); signal(); }
     bool bNotifyError;
 private:
-    ofMutex conditionMutex;
-    Poco::Condition condition;
+    std::mutex conditionMutex;
+    std::condition_variable condition;
 //    ofFile * writer;
     string filePath;
     int fd;
@@ -95,7 +96,7 @@ public:
     bool bNotifyError;
 private:
     ofMutex conditionMutex;
-    Poco::Condition condition;
+    std::condition_variable condition;
 //    ofFile * writer;
     string filePath;
     int fd;
