@@ -162,7 +162,7 @@ void ofxAudioDataWriterThread::threadedFunction(){
     if(fd == -1){
         ofLogVerbose("ofxAudioDataWriterThread") << "opening pipe: " <<  filePath;
         fd = ::open(filePath.c_str(), O_WRONLY);
-        ofLogWarning("ofxVideoDataWriterThread") << "got file descriptor " << fd;
+        ofLogWarning("ofxAudioDataWriterThread") << "got file descriptor " << fd;
     }
 
     while(isThreadRunning())
