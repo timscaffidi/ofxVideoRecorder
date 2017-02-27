@@ -135,6 +135,7 @@ public:
     void start();
     void close();
     void setPaused(bool bPause);
+    void setAutoSync(bool bAutoSync);
 
     bool hasVideoError();
     bool hasAudioError();
@@ -181,6 +182,7 @@ private:
     bool bRecordVideo;
     bool bIsRecording;
     bool bIsPaused;
+    bool bIsAutoSync;
     bool bFinishing;
     bool bIsSilent;
 
