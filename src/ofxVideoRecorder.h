@@ -120,6 +120,7 @@ class ofxVideoRecorder  : public ofThread
 {
 public:
     ofxVideoRecorder();
+    ~ofxVideoRecorder();
 
     void threadedFunction();
 
