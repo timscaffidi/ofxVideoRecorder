@@ -231,6 +231,13 @@ ofxVideoRecorder::ofxVideoRecorder(){
     outputPixelFormat = "";
 }
 
+ofxVideoRecorder::~ofxVideoRecorder(){
+    if(ofFile::doesFileExist(videoPipePath)){
+        string cmd = "bash --login -c 'rm " + videoPipePath + "'";
+        system(cmd.c_str());
+    }
+}
+
 //--------------------------------------------------------------
 bool ofxVideoRecorder::setup(string fname, int w, int h, float fps, int sampleRate, int channels, bool sysClockSync, bool silent){
     if(bIsInitialized)
