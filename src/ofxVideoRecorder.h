@@ -131,6 +131,7 @@ public:
 
     bool addFrame(const ofPixels &pixels);
     void addAudioSamples(float * samples, int bufferSize, int numChannels);
+    void addAudioSamples(ofSoundBuffer& buffer);
 
     void start();
     void close();

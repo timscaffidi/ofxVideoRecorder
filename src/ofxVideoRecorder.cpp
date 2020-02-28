@@ -432,6 +432,27 @@ void ofxVideoRecorder::addAudioSamples(float *samples, int bufferSize, int numCh
 }
 
 //--------------------------------------------------------------
+void ofxVideoRecorder::addAudioSamples(ofSoundBuffer& buffer) {
+    if (!bIsRecording || bIsPaused) return;
+
+    if(bIsInitialized && bRecordAudio){
+        int size = buffer.getNumFrames() * buffer.getNumChannels();
+        audioFrameShort * shortSamples = new audioFrameShort;
+        shortSamples->data = new short[size];
+        shortSamples->size = size;
+
+        for(int i=0; i < buffer.getNumFrames(); i++){
+            for(int j=0; j < buffer.getNumChannels(); j++){
+                shortSamples->data[i * buffer.getNumChannels() + j] = (short) (buffer.getSample(i, j) * 32767.0f);
+            }
+        }
+        audioFrames.Produce(shortSamples);
+        audioThread.signal();
+        audioSamplesRecorded += size;
+    }
+}
+
+//--------------------------------------------------------------
 void ofxVideoRecorder::start(){
     if(!bIsInitialized) return;
 

@@ -23,11 +23,18 @@ void ofApp::setup(){
 
     ofAddListener(vidRecorder.outputFileCompleteEvent, this, &ofApp::recordingComplete);
 
-//    soundStream.listDevices();
-//    soundStream.setDeviceID(11);
-    soundStream.setup(this, 0, channels, sampleRate, 256, 4);
+//    soundStream.printDeviceList();
+    ofSoundStreamSettings settings;
+    auto devices = soundStream.getDeviceList();
+    settings.setInDevice(devices[0]);
+    settings.setInListener(this);
+    settings.sampleRate = sampleRate;
+    settings.bufferSize = 256;
+    settings.numInputChannels = 2;
+    settings.numOutputChannels = 0;
+    soundStream.setup(settings);
 
-    ofSetWindowShape(vidGrabber.getWidth(), vidGrabber.getHeight()	);
+    ofSetWindowShape(vidGrabber.getWidth(), vidGrabber.getHeight()    );
     bRecording = false;
     ofEnableAlphaBlending();
 }
@@ -82,9 +89,9 @@ void ofApp::draw(){
 }
 
 //--------------------------------------------------------------
-void ofApp::audioIn(float *input, int bufferSize, int nChannels){
+void ofApp::audioIn(ofSoundBuffer& buffer){
     if(bRecording)
-        vidRecorder.addAudioSamples(input, bufferSize, nChannels);
+        vidRecorder.addAudioSamples(buffer);
 }
 
 //--------------------------------------------------------------
